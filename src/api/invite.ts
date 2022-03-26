@@ -1,0 +1,162 @@
+/*
+ * This file is part of the ObjectVault Project.
+ * Copyright (C) 2020-2022 Paulo Ferreira <vault at sourcenotes.org>
+ *
+ * This work is published under the GNU AGPLv3.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+// Libraries //
+import axios from "axios";
+import _ from "lodash";
+
+async function getInviteNoSession(inviteID: string, params?: any): Promise<any> {
+  try {
+    let options: any = {};
+
+    // Do we have URL Params?
+    if (params) {
+      options.params = params;
+    }
+
+    // Request URL
+    let url: string = `http://localhost:3000/1/invitation/invite/${inviteID}`;
+
+    // Request
+    const response = await axios.get(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    let code = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    // Get Organization Invites
+    return _.get(response, "data.data.invitation", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function getInvitiations(objectID: string, params?: any): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Do we have URL Params?
+    if (params) {
+      options.params = params;
+    }
+
+    // Request URL
+    let url: string = `http://localhost:3000/1/invites/${objectID}`;
+
+    // Request
+    const response = await axios.get(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    let code = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    // Get Organization Invites
+    return _.get(response, "data.data.invitations", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function acceptInvitation(uid: string, params: any): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `http://localhost:3000/1/invitation/accept/${uid}`;
+
+    // Request
+    const response = await axios.post(url, params, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    let code = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    // Return User
+    return _.get(response, "data.data.user", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function deleteInvitation(uid: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // TODO: Verify Implementation
+
+    // Request URL
+    let url: string = `http://localhost:3000/1/invite/${uid}`;
+
+    // Request
+    const response = await axios.delete(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    let code = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    // Return User
+    return _.get(response, "data.data", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+export default {
+  getNoSession: getInviteNoSession,
+  list: getInvitiations,
+  accept: acceptInvitation,
+  delete: deleteInvitation
+}

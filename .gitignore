@@ -1,0 +1,29 @@
+# VSCode Dependencies
+/.vscode/
+*.code-workspace
+
+# Scratch Files and Directories
+*.old
+
+# PineGrow Dependencies
+_pgbackup/
+_pginfo/
+pinegrow.json
+
+# NODE Dependencies
+node_modules/
+package-lock.json
+
+# Build Directories
+/public/assets/
+/public/build/
+
+# Mockup
+mockup/assets
+mockup/bootstrap
+
+.DS_Store
+
+# Ignore Font Files
+*.woff
+*.woff2
