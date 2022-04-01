@@ -1,4 +1,5 @@
 # Ignore Unneeded Configutation Files.
+.eslintrc*
 
 # VSCode Dependencies
 .vscode/
