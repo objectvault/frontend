@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 async function getTemplates(org: string, params?: any): Promise<any> {
   try {
@@ -24,10 +24,10 @@ async function getTemplates(org: string, params?: any): Promise<any> {
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/templates`;
+    let url: string = `/org/${org}/templates`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -62,10 +62,10 @@ async function getTemplate(org: string, name: string, params?: any): Promise<any
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/template/${name}`;
+    let url: string = `/org/${org}/template/${name}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {

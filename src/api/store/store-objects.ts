@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 async function listObjects(sid: string, pid: string, params?: any): Promise<any> {
   try {
@@ -24,10 +24,10 @@ async function listObjects(sid: string, pid: string, params?: any): Promise<any>
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${sid}/objs/${pid}`;
+    let url: string = `/store/${sid}/objs/${pid}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -56,10 +56,10 @@ async function createObject(sid: string, pid: string, object: any): Promise<any>
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${sid}/obj/${pid}`;
+    let url: string = `/store/${sid}/obj/${pid}`;
 
     // Request
-    const response = await axios.post(url, object, options);
+    const response = await ws_client().post(url, object, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -89,10 +89,10 @@ async function readObject(store: string, object: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/obj/${object}`;
+    let url: string = `/store/${store}/obj/${object}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -121,10 +121,10 @@ async function updateObject(sid: string, pid: string, oid: string, object: any):
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${sid}/obj/${pid}/${oid}`;
+    let url: string = `/store/${sid}/obj/${pid}/${oid}`;
 
     // Request
-    const response = await axios.put(url, object, options);
+    const response = await ws_client().put(url, object, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -154,10 +154,10 @@ async function deleteObject(sid: string, oid: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${sid}/obj/${oid}`;
+    let url: string = `/store/${sid}/obj/${oid}`;
 
     // Request
-    const response = await axios.delete(url, options);
+    const response = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {

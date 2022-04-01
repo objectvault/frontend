@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "./ws";
 
 import stores from "./org/org-store";
 import users from "./org/org-user";
@@ -25,10 +25,10 @@ async function getOrgProfile(org: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}`;
+    let url: string = `/org/${org}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {

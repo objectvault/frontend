@@ -9,9 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
-
+import ws_client from "./ws";
 import utilities from "./utilities";
 
 async function hello(): Promise<any> {
@@ -20,11 +19,11 @@ async function hello(): Promise<any> {
       withCredentials: true,
     };
 
-    // Request URL
-    let url: string = "http://localhost:3000/session";
+    // Service URL
+    let url: string = "/session";
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client(false).get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -61,14 +60,14 @@ async function login(user: number | string, password: string, json?: any): Promi
       }
     }
 
-    // Add USer Hash
+    // Add User Hash
     json.hash = utilities.hash.calculate(password);
 
-    // Request URL
-    let url: string = `http://localhost:3000/1/session/${user}`;
+    // Service URL
+    let url: string = `/session/${user}`;
 
     // Request
-    const response = await axios.post(url, json, options);
+    const response = await ws_client().post(url, json, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -96,11 +95,11 @@ async function logout(): Promise<number> {
       withCredentials: true,
     };
 
-    // Request URL
-    let url: string = `http://localhost:3000/1/session`;
+    // Service URL
+    let url: string = `/session`;
 
     // Request
-    const response = await axios.delete(url, options);
+    const response = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {

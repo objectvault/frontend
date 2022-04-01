@@ -9,9 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
-
+import ws_client from "../ws";
 import utilities from "../utilities";
 
 async function isStoreSessionOpen(store: string): Promise<any> {
@@ -21,10 +20,10 @@ async function isStoreSessionOpen(store: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/open`;
+    let url: string = `/store/${store}/open`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -63,10 +62,10 @@ async function openStoreSession(org: string, store: string, password: string): P
     formData.append("credentials", hash);
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/store/${store}/open`;
+    let url: string = `/org/${org}/store/${store}/open`;
 
     // Request
-    const response = await axios.post(url, formData, options);
+    const response = await ws_client().post(url, formData, options);
     console.log(response);
 
     if (response.status != 200) {

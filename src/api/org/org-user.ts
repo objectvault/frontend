@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 async function getUsers(org: string, params?: any): Promise<any> {
   try {
@@ -24,10 +24,10 @@ async function getUsers(org: string, params?: any): Promise<any> {
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/users`;
+    let url: string = `/org/${org}/users`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -57,10 +57,10 @@ async function getUser(org: string, user: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/user/${user}`;
+    let url: string = `/org/${org}/user/${user}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -98,10 +98,10 @@ async function setUserRoles(org: string, user: string, roles: string): Promise<s
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/user/${user}/roles`;
+    let url: string = `/org/${org}/user/${user}/roles`;
 
     // Request
-    const response = await axios.put(url, `roles=${roles}`, options);
+    const response = await ws_client().put(url, `roles=${roles}`, options);
     console.log(response);
 
     if (response.status != 200) {

@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "./ws";
 
 async function getInviteNoSession(inviteID: string, params?: any): Promise<any> {
   try {
@@ -22,10 +22,10 @@ async function getInviteNoSession(inviteID: string, params?: any): Promise<any> 
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/invitation/invite/${inviteID}`;
+    let url: string = `/invitation/invite/${inviteID}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -60,10 +60,10 @@ async function getInvitiations(objectID: string, params?: any): Promise<any> {
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/invites/${objectID}`;
+    let url: string = `/invites/${objectID}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -93,10 +93,10 @@ async function acceptInvitation(uid: string, params: any): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/invitation/accept/${uid}`;
+    let url: string = `/invitation/accept/${uid}`;
 
     // Request
-    const response = await axios.post(url, params, options);
+    const response = await ws_client().post(url, params, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -128,10 +128,10 @@ async function deleteInvitation(uid: string): Promise<any> {
     // TODO: Verify Implementation
 
     // Request URL
-    let url: string = `http://localhost:3000/1/invite/${uid}`;
+    let url: string = `/invite/${uid}`;
 
     // Request
-    const response = await axios.delete(url, options);
+    const response = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {

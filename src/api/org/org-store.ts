@@ -9,9 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
-
+import ws_client from "../ws";
 
 async function getStores(org: string): Promise<any> {
   try {
@@ -20,10 +19,10 @@ async function getStores(org: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/stores`;
+    let url: string = `/org/${org}/stores`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -53,10 +52,10 @@ async function getStore(org: string, store: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/store/${store}`;
+    let url: string = `/org/${org}/store/${store}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -85,10 +84,10 @@ async function createStore(org: string, store: any): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/store`;
+    let url: string = `/org/${org}/store`;
 
     // Request
-    const response = await axios.post(url, store, options);
+    const response = await ws_client().post(url, store, options);
     console.log(response);
 
     if (response.status != 200) {

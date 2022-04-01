@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 async function getUsers(store: string, params?: any): Promise<any> {
   try {
@@ -24,10 +24,10 @@ async function getUsers(store: string, params?: any): Promise<any> {
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/users`;
+    let url: string = `/store/${store}/users`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -57,10 +57,10 @@ async function getUser(store: string, user: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/user/${user}`;
+    let url: string = `/store/${store}/user/${user}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -89,10 +89,10 @@ async function getUserRoles(org: string, user: string): Promise<string> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${org}/user/${user}/roles`;
+    let url: string = `/store/${org}/user/${user}/roles`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -121,10 +121,10 @@ async function setUserRoles(store: string, user: string, roles: string): Promise
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/user/${user}/roles`;
+    let url: string = `/store/${store}/user/${user}/roles`;
 
     // Request
-    const response = await axios.put(url, `roles=${roles}`, options);
+    const response = await ws_client().put(url, `roles=${roles}`, options);
     console.log(response);
 
     if (response.status != 200) {

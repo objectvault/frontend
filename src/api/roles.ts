@@ -201,7 +201,7 @@ function extractRole(category: number,
   return v;
 }
 
-function mapRolesToCategory(roles: number[], all: boolean | function = false): { [key: number]: number } {
+function mapRolesToCategory(roles: number[], all?: boolean | Function): { [key: number]: number } {
   let map: TMapCategoryFunctions = {};
 
   if (all != null) {

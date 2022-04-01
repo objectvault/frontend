@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 async function listOrganizations(): Promise<any> {
   try {
@@ -19,10 +19,10 @@ async function listOrganizations(): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/system/orgs`;
+    let url: string = `/system/orgs`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -52,10 +52,10 @@ async function createOrganization(org: any): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/system/org`;
+    let url: string = `/system/org`;
 
     // Request
-    const response = await axios.post(url, org, options);
+    const response = await ws_client().post(url, org, options);
     console.log(response);
 
     if (response.status != 200) {

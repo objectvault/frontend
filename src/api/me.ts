@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "./ws";
 
 // Developer Libraries //
 import type { TPaging } from "./pager";
@@ -27,10 +27,10 @@ async function myObjects(params?: any): Promise<any> {
     }
 
     // Request URL
-    let url: string = "http://localhost:3000/1/me/objects";
+    let url: string = "/me/objects";
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -60,10 +60,10 @@ async function myFavorites(): Promise<any> {
     };
 
     // Request URL
-    let url: string = "http://localhost:3000/1/me/favorites";
+    let url: string = "/me/favorites";
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -93,10 +93,10 @@ async function myToggleFavorite(o: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/me/favorite/toggle/${o}`;
+    let url: string = `/me/favorite/toggle/${o}`;
 
     // Request
-    const response = await axios.put(url, null, options);
+    const response = await ws_client().put(url, null, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -140,10 +140,10 @@ async function myOrgs(params?: any, pager?: TPaging): Promise<any> {
     }
 
     // Request URL
-    let url: string = "http://localhost:3000/1/me/orgs";
+    let url: string = "/me/orgs";
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {

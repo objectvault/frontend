@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "./ws";
 
 import invites from "./store/store-invite";
 import objects from "./store/store-objects";
@@ -25,10 +25,10 @@ async function getStoreProfile(store: string): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}`;
+    let url: string = `/store/${store}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {

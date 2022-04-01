@@ -11,6 +11,7 @@
 // Libraries //
 import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 // ALIAS: Common Invite Functions //
 import invites from "../invite";
@@ -22,10 +23,10 @@ async function createInvite(store: string, invitation: any): Promise<any> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/invite`;
+    let url: string = `/store/${store}/invite`;
 
     // Request
-    const response = await axios.post(url, invitation, options);
+    const response = await ws_client().post(url, invitation, options);
     console.log(response);
 
     if (response.status != 200) {

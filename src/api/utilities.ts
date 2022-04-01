@@ -10,7 +10,6 @@
 
 // Libraries //
 import forge from "node-forge";
-import me from './me';
 
 // CONSTANTS //
 const OTYPE_NOTSET: number = 0;

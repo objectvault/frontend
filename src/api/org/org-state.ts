@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 async function setOrgLockState(org: string, flag: boolean): Promise<number> {
   try {
@@ -19,10 +19,10 @@ async function setOrgLockState(org: string, flag: boolean): Promise<number> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/lock/${flag}`;
+    let url: string = `/org/${org}/lock/${flag}`;
 
     // Request
-    const response = await axios.put(url, null, options);
+    const response = await ws_client().put(url, null, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -51,10 +51,10 @@ async function setOrgBlockState(org: string, flag: boolean): Promise<number> {
     };
 
     // Request URL
-    let url: string = `http://localhost:3000/1/org/${org}/block/${flag}`;
+    let url: string = `/org/${org}/block/${flag}`;
 
     // Request
-    const response = await axios.put(url, null, options);
+    const response = await ws_client().put(url, null, options);
     console.log(response);
 
     if (response.status != 200) {

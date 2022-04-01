@@ -9,8 +9,8 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
+import ws_client from "../ws";
 
 async function getTemplates(store: string, params?: any): Promise<any> {
   try {
@@ -24,10 +24,10 @@ async function getTemplates(store: string, params?: any): Promise<any> {
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/templates`;
+    let url: string = `/store/${store}/templates`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -62,10 +62,10 @@ async function getTemplate(store: string, name: string, params?: any): Promise<a
     }
 
     // Request URL
-    let url: string = `http://localhost:3000/1/store/${store}/template/${name}`;
+    let url: string = `/store/${store}/template/${name}`;
 
     // Request
-    const response = await axios.get(url, options);
+    const response = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
