@@ -1,0 +1,25 @@
+# Docker Stuff
+Dockerfile
+
+# GIT Stuff
+.git
+.gitignore
+
+# VSCode Stuff
+.history
+.vs_code
+
+# Node Stuff
+node_modules
+package-lock.json
+
+# Other Stuff
+.editorconfig
+.eslintrc
+
+# SVELTE Build stuff
+/public/build
+
+# Other Application Stuff
+LICENSE.md
+README.md

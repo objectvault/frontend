@@ -1,3 +1,4 @@
+import copy from 'rollup-plugin-copy';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
@@ -42,15 +43,11 @@ export default {
   },
   plugins: [
     // Direct Copy
-    /*
     copy({
       targets: [
-        { src: 'node_modules/jquery/dist/jquery.js', dest: 'public/assets' },
-        { src: 'node_modules/fomantic-ui-css/semantic.js', dest: 'public/assets' },
+        { src: 'node_modules/bootstrap-icons/font/fonts/*', dest: 'public/build/fonts' },
       ]
     }),
-    */
-
     // ONLY Applies to *.svelte files
     svelte({
       preprocess: sveltePreprocess({
@@ -87,7 +84,7 @@ export default {
     url({
       // by default, rollup-plugin-url will not handle font files
       include: ['**/*.ttf', '**/*.woff', '**/*.woff2'], // Files to Copy (Required for Material Icons)
-      // publicPath: 'public/assets', // OUTPUT Directory
+      publicPath: 'public/fonts', // OUTPUT Directory
       fileName: '[name][extname]', // Maintain File Names
       limit: 0, // No Size Limit
     }),
