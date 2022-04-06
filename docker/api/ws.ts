@@ -13,7 +13,7 @@ import axios, { AxiosInstance } from "axios";
 
 // DEFAULT Request Timeout
 const TIMEOUT: number = 1000;
-const SERVER_URL: string = "http://ov-api-server:3000";
+const SERVER_URL: string = "http://localhost:3000";
 
 // Create C-API Request Client (Unversioned)
 const ws_client_unversioned: AxiosInstance = axios.create({
