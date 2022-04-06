@@ -18,13 +18,13 @@ const SERVER_URL: string = "http://localhost:3000";
 // Create C-API Request Client (Unversioned)
 const ws_client_unversioned: AxiosInstance = axios.create({
   baseURL: SERVER_URL,
-  timeout: 1000
+  timeout: TIMEOUT
 });
 
 // Create C-API Request Client
 const ws_client_versioned: AxiosInstance = axios.create({
   baseURL: `${SERVER_URL}/1`,
-  timeout: 1000
+  timeout: TIMEOUT
 });
 
 // Using a Function to Make Things Extendible
