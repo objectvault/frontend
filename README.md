@@ -1,105 +1,53 @@
-*Looking for a shareable component template? Go here --> [sveltejs/component-template](https://github.com/sveltejs/component-template)*
+# ObjectVault Frontend Application
 
----
+## Desciption
 
-# svelte app
+The initial idea, was to create a shared password vaults, to be used in entreprises.
+The reasoning was that, currently most companies, that require access to shared portal services always have the problem of:
 
-This is a project template for [Svelte](https://svelte.dev) apps. It lives at https://github.com/sveltejs/template.
+1. How to share the password, between the employees that need access?
+2. How to maintain the password up to date (when systems are requiring constant password changes)?
+3. Basically how to maintain the CIA (Confidentiality, Integrity and Availability) triad?
 
-To create a new project based on this template using [degit](https://github.com/Rich-Harris/degit):
+A possible solution, was shared password vaults. By:
 
-```bash
-npx degit sveltejs/template svelte-app
-cd svelte-app
-```
+1. Creating a ***shared*** object store, in which all essential parts of the objects are encrypted
+2. Combined with managed access to the ***vaults*** (who can read, who can create, etc)
 
-*Note that you will need to have [Node.js](https://nodejs.org) installed.*
+Allows a company to create multiple secure storage areas, through which sensitive information can be shared, securily, with only the relevant users.
 
+The intial plan, was only to encompass shared passwords, but after all this time developing, a thought popped up: *"Why limit the contents of the vaults to password objects (forms)"*.
 
-## Get started
+Why not create a template based system, that allows storage of different data structures, and even, god forbid, files?
 
-Install the dependencies...
+## Infrastructure
 
-```bash
-cd svelte-app
-npm install
-```
+The backend storage is provided by, a possibly, sharded MariaDB Database Cluster.
+**NOTE**: Sharding and Database Clusters are OPTIONAL
 
-...then start [Rollup](https://rollupjs.org):
+Access to the storage backend, is controlled by a Microservice interface. Ina production environment, this would be the only way to access the vaults.
 
-```bash
-npm run dev
-```
+The UX is provided by [Svelte](https://svelte.dev) based SPA Web Application
 
-Navigate to [localhost:5000](http://localhost:5000). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
+## What is missing
 
-By default, the server will only respond to requests from localhost. To allow connections from other computers, edit the `sirv` commands in package.json to include the option `--host 0.0.0.0`.
+* REDIS Session Store
+  * This would allow for the creation of distributed server farms for high workloads
+  * Make session management more secure, since session sensitive data, would never leave the server farm
 
-If you're using [Visual Studio Code](https://code.visualstudio.com/) we recommend installing the official extension [Svelte for VS Code](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode). If you are using other editors you may need to install a plugin in order to get syntax highlighting and intellisense.
+* RabbitMQ Action Server
+  * For sending notifications, emails, etc
+  * Offline processing
 
-## Building and running in production mode
+* Temaplates
+  * Currently the only template available is for encrypted notes
+  * Need to develope other templates, starting with a Site Password Storage Template
 
-To create an optimised version of the app:
+## Building and running
 
-```bash
-npm run build
-```
+Since this is a multi-server application, please see the [Builder Project](https://github.com/objectvault/builder) to see how to get the system up and going.
+This scripts there have the required information on how to:
 
-You can run the newly built app with `npm run start`. This uses [sirv](https://github.com/lukeed/sirv), which is included in your package.json's `dependencies` so that the app will work when you deploy to platforms like [Heroku](https://heroku.com).
-
-
-## Single-page app mode
-
-By default, sirv will only respond to requests that match files in `public`. This is to maximise compatibility with static fileservers, allowing you to deploy your app anywhere.
-
-If you're building a single-page app (SPA) with multiple routes, sirv needs to be able to respond to requests for *any* path. You can make it so by editing the `"start"` command in package.json:
-
-```js
-"start": "sirv public --single"
-```
-
-## Using TypeScript
-
-This template comes with a script to set up a TypeScript development environment, you can run it immediately after cloning the template with:
-
-```bash
-node scripts/setupTypeScript.js
-```
-
-Or remove the script via:
-
-```bash
-rm scripts/setupTypeScript.js
-```
-
-## Deploying to the web
-
-### With [Vercel](https://vercel.com)
-
-Install `vercel` if you haven't already:
-
-```bash
-npm install -g vercel
-```
-
-Then, from within your project folder:
-
-```bash
-cd public
-vercel deploy --name my-project
-```
-
-### With [surge](https://surge.sh/)
-
-Install `surge` if you haven't already:
-
-```bash
-npm install -g surge
-```
-
-Then, from within your project folder:
-
-```bash
-npm run build
-surge public my-project.surge.sh
-```
+1. Build and
+2. Integrate the servers
+3. Run the Application
