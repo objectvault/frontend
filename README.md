@@ -1,8 +1,8 @@
 # ObjectVault Frontend Application
 
-## Desciption
+## Description
 
-The initial idea, was to create a shared password vaults, to be used in entreprises.
+The initial idea, was to create a shared password vaults, to be used in enterprises.
 The reasoning was that, currently most companies, that require access to shared portal services always have the problem of:
 
 1. How to share the password, between the employees that need access?
@@ -14,9 +14,9 @@ A possible solution, was shared password vaults. By:
 1. Creating a ***shared*** object store, in which all essential parts of the objects are encrypted
 2. Combined with managed access to the ***vaults*** (who can read, who can create, etc)
 
-Allows a company to create multiple secure storage areas, through which sensitive information can be shared, securily, with only the relevant users.
+Allows a company to create multiple secure storage areas, through which sensitive information can be shared, securely, with only the relevant users.
 
-The intial plan, was only to encompass shared passwords, but after all this time developing, a thought popped up: *"Why limit the contents of the vaults to password objects (forms)"*.
+The initial plan, was only to encompass shared passwords, but after all this time developing, a thought popped up: *"Why limit the contents of the vaults to password objects (forms)"*.
 
 Why not create a template based system, that allows storage of different data structures, and even, god forbid, files?
 
