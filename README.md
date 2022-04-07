@@ -23,11 +23,12 @@ Why not create a template based system, that allows storage of different data st
 ## Infrastructure
 
 The backend storage is provided by, a possibly, sharded MariaDB Database Cluster.
+
 **NOTE**: Sharding and Database Clusters are OPTIONAL
 
-Access to the storage backend, is controlled by a Microservice interface. Ina production environment, this would be the only way to access the vaults.
+Access to the storage backend, is controlled by a Microservice interface. Which in a production environment, would be the only way to access the vaults (database).
 
-The UX is provided by [Svelte](https://svelte.dev) based SPA Web Application
+The UX is provided by [Svelte](https://svelte.dev) based SPA Web Application.
 
 ## What is missing
 
@@ -39,15 +40,15 @@ The UX is provided by [Svelte](https://svelte.dev) based SPA Web Application
   * For sending notifications, emails, etc
   * Offline processing
 
-* Temaplates
+* Templates
   * Currently the only template available is for encrypted notes
-  * Need to develope other templates, starting with a Site Password Storage Template
+  * Need to develop other templates, starting with a Site Password Storage Template
 
 ## Building and running
 
 Since this is a multi-server application, please see the [Builder Project](https://github.com/objectvault/builder) to see how to get the system up and going.
 This scripts there have the required information on how to:
 
-1. Build and
-2. Integrate the servers
-3. Run the Application
+1. Build
+2. Integrate and
+3. Run the Application servers
