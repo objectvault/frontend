@@ -41,8 +41,12 @@ export class TemplateField {
     return d;
   }
 
+  public settings(): any {
+    return this._field.hasOwnProperty('settings') ? this._field.settings : null;
+  }
+
   public validations(): any {
-    return this._field.validations;
+    return this._field.hasOwnProperty('validations') ? this._field.validations : null;
   }
 
   public path(): any {

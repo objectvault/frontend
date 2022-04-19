@@ -13,7 +13,7 @@
   import { createEventDispatcher } from "svelte";
 
   // SVELTESTAP
-  import { FormGroup, Input, Label } from "sveltestrap";
+  import { Button, Icon, Input, InputGroup, InputGroupText } from "sveltestrap";
   import type { TemplateField } from "../../classes/form-template";
 
   // 3rd Party Libraries //
@@ -26,11 +26,9 @@
   const defaults: any = {
     // DEFAULTS Settings for fields that alias this Field Componet
     settings: {
-      text: {
-        html: false,
-      },
-      "text-html": {
-        html: true,
+      password: {
+        confirmation: true,
+        eye: true,
       },
     },
   };
@@ -45,9 +43,9 @@
   export let value: string = ""; // Field Initial Value
 
   // Internal Variables
-  let inner: HTMLTextAreaElement;
+  let bShowText: boolean = false;
+  let confirmation: string = ""; // Confirmation Initial Value
 
-  // DEFAULT Options for fields that use text-area as UI
   // OBSERVERS
   $: _settings = fieldSettings(field);
   $: _validations = fieldValidations(field);
@@ -90,35 +88,50 @@
   }
 
   // EVENT HANDLERS //
-  function resize(e: InputEvent) {
-    inner.style.height = "auto";
-    inner.style.height = 4 + inner.scrollHeight + "px";
+  function onToggleShow(e: Event) {
+    e.preventDefault(); // NEEDED: Clicking on Button Closes Dialog
+    bShowText = !bShowText;
+  }
 
+  function onChangeValue(e: InputEvent) {
     dispatch("onFieldValueChanged", {
       field,
       value: (e.target as any).value,
     });
   }
 
+  function onChangeConfirmationValue(e: InputEvent) {
+    confirmation = (e.target as any).value;
+  }
   // HELPERS //
 </script>
 
-{#if mode === "create" || mode === "update"}
-  <FormGroup>
-    <Label>{field.label()}</Label>
+<InputGroup>
+  <InputGroupText class="col-3">{field.label()}</InputGroupText>
+  <Input
+    type={bShowText ? "text" : "password"}
+    value={value == null ? "" : value}
+    on:input={onChangeValue}
+    disabled={mode === "view"}
+  />
+  {#if setting("eye", true)}
+    <Button
+      class="col-auto input-group-text"
+      tabindex={-1}
+      on:click={onToggleShow}
+    >
+      <Icon name="eye" />
+    </Button>
+  {/if}
+</InputGroup>
+
+{#if mode !== "view" && setting("confirmation", true) && !bShowText}
+  <InputGroup>
+    <InputGroupText class="col-3">Confirmation</InputGroupText>
     <Input
-      rows={1}
-      type="textarea"
-      bind:inner
-      value={value == null ? "" : value}
-      on:input={resize}
+      type="password"
+      value={confirmation == null ? "" : confirmation}
+      on:input={onChangeConfirmationValue}
     />
-  </FormGroup>
-{:else}
-  <div>
-    <Label>{field.label()}</Label>
-    <pre>
-      {value == null ? "" : value}
-    </pre>
-  </div>
+  </InputGroup>
 {/if}

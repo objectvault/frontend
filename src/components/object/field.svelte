@@ -14,15 +14,21 @@
 
   // Developer Libraries //
   import utilities from "../../api/utilities";
+  import type { TemplateField } from "../../classes/form-template";
   import type { TemplateObjectAdaptor } from "../../classes/template-object-adapter";
 
-  // CUSTOM Components //
+  // FIELD Components //
   import TextArea from "./text-area.svelte";
+  import TextField from "./text-field.svelte";
+  import TextHidden from "./text-hidden.svelte";
 
   // CONSTANTS
   const mapComponent = {
     // Map Field Type to Display Entity
     text: TextArea,
+    url: TextField,
+    user: TextField,
+    password: TextHidden,
   };
 
   // SPECIAL EXPORT - Treat classes as class attribute
@@ -46,6 +52,8 @@
 
   // SVELTE Event Dispatcher
   const dispatch = createEventDispatcher();
+
+  // HELPERS //
 
   // EVENT HANDLERS //
   function onFieldValueChanged(e: CustomEvent) {

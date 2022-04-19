@@ -86,6 +86,7 @@
   </InputGroup>
   {#each object.groups() as group}
     <ObjectFormGroup
+      class="mb-2"
       {mode}
       {group}
       {object}

@@ -13,7 +13,7 @@
   import { createEventDispatcher } from "svelte";
 
   // SVELTESTAP
-  import { FormGroup, Input, Label } from "sveltestrap";
+  import { Input, InputGroup, InputGroupText } from "sveltestrap";
   import type { TemplateField } from "../../classes/form-template";
 
   // 3rd Party Libraries //
@@ -26,11 +26,16 @@
   const defaults: any = {
     // DEFAULTS Settings for fields that alias this Field Componet
     settings: {
-      text: {
-        html: false,
+      user: {
+        trim: true,
       },
-      "text-html": {
-        html: true,
+      url: {
+        trim: true,
+      },
+    },
+    validations: {
+      url: {
+        "check-url": true,
       },
     },
   };
@@ -45,9 +50,7 @@
   export let value: string = ""; // Field Initial Value
 
   // Internal Variables
-  let inner: HTMLTextAreaElement;
 
-  // DEFAULT Options for fields that use text-area as UI
   // OBSERVERS
   $: _settings = fieldSettings(field);
   $: _validations = fieldValidations(field);
@@ -90,35 +93,36 @@
   }
 
   // EVENT HANDLERS //
-  function resize(e: InputEvent) {
-    inner.style.height = "auto";
-    inner.style.height = 4 + inner.scrollHeight + "px";
+  function onChangeValue(e: InputEvent) {
+    let v: string = (e.target as any).value;
 
+    // Trim the value?
+    if (setting("trim", false)) {
+      // YES: New Value Different?
+      const n: string = v.trim();
+      if (n !== v) {
+        // YES: Change Field Value
+        (e.target as any).value = n;
+        v = n;
+      }
+    }
+
+    // NOTIFY of Change
     dispatch("onFieldValueChanged", {
       field,
-      value: (e.target as any).value,
+      value: v,
     });
   }
 
   // HELPERS //
 </script>
 
-{#if mode === "create" || mode === "update"}
-  <FormGroup>
-    <Label>{field.label()}</Label>
-    <Input
-      rows={1}
-      type="textarea"
-      bind:inner
-      value={value == null ? "" : value}
-      on:input={resize}
-    />
-  </FormGroup>
-{:else}
-  <div>
-    <Label>{field.label()}</Label>
-    <pre>
-      {value == null ? "" : value}
-    </pre>
-  </div>
-{/if}
+<InputGroup>
+  <InputGroupText class="col-3">{field.label()}</InputGroupText>
+  <Input
+    type="text"
+    value={value == null ? "" : value}
+    on:input={onChangeValue}
+    disabled={mode === "view"}
+  />
+</InputGroup>

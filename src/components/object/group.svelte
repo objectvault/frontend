@@ -50,8 +50,12 @@
   // HELPERS //
 </script>
 
-<form class={_classes}>
-  {#each _group.fields() as field}
-    <FormField {mode} {field} {object} on:onFieldModified={onFieldModified} />
-  {/each}
-</form>
+{#each _group.fields() as field}
+  <FormField
+    class="mb-1"
+    {mode}
+    {field}
+    {object}
+    on:onFieldModified={onFieldModified}
+  />
+{/each}
