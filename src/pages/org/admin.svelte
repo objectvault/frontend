@@ -494,6 +494,16 @@
           roles
         ),
       },
+      {
+        id: "templates",
+        label: "Templates",
+        icon: "file-text",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE,
+          roles
+        ),
+        fixed: apiRoles.FUNCTION_UPDATE,
+      },
     ];
 
     const org_not_0_roles: any[] = [
@@ -550,6 +560,19 @@
           apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
           roles
         ),
+      },
+      {
+        id: "templates",
+        label: "Templates",
+        icon: "file-text",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE,
+          roles
+        ),
+        fixed:
+          apiRoles.FUNCTION_READ |
+          apiRoles.FUNCTION_LIST |
+          apiRoles.FUNCTION_UPDATE,
       },
     ];
 

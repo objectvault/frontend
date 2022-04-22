@@ -144,7 +144,9 @@
 
   // EVENTS //
   function onToggleRoleFlag(e: Event, role: any, flagID: string): void {
-    console.info(`${role.id} toggled flag ${flagID} to ${e.target.checked}`);
+    console.info(
+      `${role.id} toggled flag ${flagID} to ${(e.target as any).checked}`
+    );
     const old: number = (e.target as any).checked
       ? setRoleFlag(role, flagID)
       : clearRoleFlag(role, flagID);
