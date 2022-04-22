@@ -6,15 +6,16 @@ WORKDIR /usr/src/app
 
 # Add Packages to Build Environment
 RUN apk --no-cache --no-progress add \
-    git
+  git
 
-# Copy Application Source
+# Prepare Node Environment
+COPY . package.json
+RUN npm install
+
+# Build Application
 COPY . .
-
-# Update Build environment
 RUN cp -af docker/. src/ \
-    && npm i \
-    && npm run build
+  && npm run build
 
 ## APP RUN ENVIRONMENT ##
 FROM nginx:alpine
