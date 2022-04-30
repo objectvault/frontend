@@ -8,6 +8,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// cSpell:ignore ferreira, paulo, sourcenotes
+
 // Libraries //
 import _ from "lodash";
 

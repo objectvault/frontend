@@ -288,15 +288,16 @@
         <div name="actions" class="col-auto">
           {#each sflUtilities.entryActions(list, entry) as action, i}
             {#if __actions.isActionDisplayed(action)}
-              <button
+              <Button
                 name={action.id}
-                type="button"
-                class={classesEntryActionButton(i, action)}
+                color={__actions.actionColor(action, "primary")}
+                outline={true}
+                class="border-0"
                 disabled={__actions.isActionDisabled(action)}
                 on:click={(e) => onEntryAction(e, action, entry)}
               >
                 <Icon name={__actions.actionIcon(action)} />
-              </button>
+              </Button>
             {/if}
           {/each}
         </div>
