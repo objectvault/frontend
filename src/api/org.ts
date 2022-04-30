@@ -16,7 +16,7 @@ import stores from "./org/org-store";
 import users from "./org/org-user";
 import invites from "./org/org-invite";
 import state from "./org/org-state";
-import template from "./org/org-template";
+import templates from "./org/org-template";
 
 async function getOrgProfile(org: string): Promise<any> {
   try {
@@ -55,6 +55,6 @@ export default {
   invites,
   state,
   stores,
-  template,
+  templates,
   users
 }

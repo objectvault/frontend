@@ -8,6 +8,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// cSpell:ignore ferreira, paulo, sourcenotes
+
 // OBJECT STATES
 const STATE_INACTIVE: number = 0x0001; // User Locked Out of System
 const STATE_BLOCKED: number = 0x0002; // User/Organization Blocked (but not deleted) from System
