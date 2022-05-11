@@ -8,9 +8,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Import Common State Management Function
-import ObjectState from "../api/states";
-
 function isStore(o: any): o is Store {
   return o != null && typeof o === 'object' && 'isValid' in o && '_id' in o && '_organization' in o && ':_alias' in o;
 }

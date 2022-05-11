@@ -420,7 +420,7 @@
 
   async function _setObjectTemplate(store: string, template: string) {
     try {
-      const t: any = await apiStore.template.get(store, template);
+      const t: any = await apiStore.templates.get(store, template);
       currentTemplate = new FormTemplate(t);
       object.setTemplate(currentTemplate);
       console.log(currentTemplate);
@@ -463,7 +463,7 @@
     try {
       // Reload Templates List
       // TODO: Have to add Filter Option SVELTE Control or else if list grows bigger than 100 items, it will be cut off
-      const list: any = await apiStore.template.list(id);
+      const list: any = await apiStore.templates.list(id);
       if (list != null) {
         templates = list.items ? list.items : [];
       }

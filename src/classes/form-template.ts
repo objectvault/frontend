@@ -132,7 +132,10 @@ export class FormTemplate {
     this._template = t;
     this._name = this._extractString(t, 'name', null);
     this._version = this._extractNumber(t, 'version', null);
-    this._model = this._extract(t, "model", null);
+
+    // Extract JSON Model
+    const m = this._extract(t, "model", null);
+    this._model = m != null && _.isString(m) ? JSON.parse(m) : m;
   }
 
   private _extract(o: any, path: string, d: any): any {
