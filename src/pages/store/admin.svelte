@@ -38,6 +38,7 @@
   import { validate } from "validate.js";
 
   // WebServices API Library //
+  import apiOrg from "../../api/org";
   import apiSession from "../../api/session";
   import apiStore from "../../api/store";
   import apiRoles from "../../api/roles";
@@ -51,11 +52,13 @@
   import type { TAction } from "../../objects/actions";
   import type { TSingleFieldList } from "../../objects/single-field-list";
   import sflUtilities from "../../objects/single-field-list";
+  import type { TModelStateList } from "../../objects/state-list";
 
   // CUSTOM Components //
   import Overlay from "../../components/overlay.svelte";
   import Spinner from "../../components/spinner.svelte";
   import SingleFieldExplorer from "../../components/list-single-field.svelte";
+  import TemplateExplorer from "../../components/list-states.svelte";
   import RolesManager from "../../components/roles-manager.svelte";
 
   // Component Paramters //
@@ -94,6 +97,9 @@
 
   const toggleRolesModifyModal = () =>
     (rolesModifyModalOpen = !rolesModifyModalOpen);
+
+  // Template List
+  let sflTemplatesList: any = null;
 
   // Reactive Statements //
   $: sflUsersList = createUsersList(params.store);
@@ -302,6 +308,16 @@
         fixed: apiRoles.FUNCTION_UPDATE,
       },
       {
+        id: "templates",
+        label: "Templates",
+        icon: "file-text",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_TEMPLATE,
+          roles
+        ),
+        fixed: apiRoles.FUNCTION_UPDATE,
+      },
+      {
         id: "store",
         label: "Store",
         icon: "sd-card",
@@ -479,6 +495,134 @@
     return l;
   }
 
+  async function templateListLoader(l: TModelStateList): Promise<any> {
+    const fv: string = l.filter.get();
+    const filter: string = fv.length ? `contains(name, "${fv}")` : null;
+
+    // CURRENTLY: Assume Child List CAN NOT contain entries that are not in the parent list
+    // Parent List
+    const plist: any = await apiOrg.templates.list(store.organization(), {
+      filter,
+    });
+
+    // Child List
+    const clist: any = await apiStore.templates.list(store.id(), { filter });
+
+    // Display Template State
+    l.displayState = true;
+
+    // Get Intenal Reprentation
+    const _internal: any = l._internal;
+
+    // Save Pager from Parent List
+    _internal.pager = plist.pager;
+    _internal.query = plist.query;
+
+    // RESET Internal Representation
+    _internal.parentObject = store.organization();
+    _internal.childObject = store.id();
+    _internal.entryIDs = [];
+    _internal.entries = {};
+
+    // Do we have Templates?
+    if (plist.items.length) {
+      // Adapt WS Parent List to View List
+      let template: string;
+      for (const item of plist.items) {
+        template = (item as any).name;
+        _internal.entryIDs.push(template);
+        (item as any).state = 0; // Exists in Parent
+        _internal.entries[template] = item;
+      }
+
+      if (clist) {
+        // Merge Child List
+        for (const item of clist.items) {
+          template = (item as any).name;
+          if (_internal.entries.hasOwnProperty(template)) {
+            _internal.entries[template].state = 1; // Exists in Both Parent and Child
+          }
+        }
+      }
+    }
+
+    return l;
+  }
+
+  function createTemplatesList(): TModelStateList {
+    // Create Basic SFL Object
+    const l: TModelStateList = {
+      header: {
+        title: "Templates",
+      },
+      filter: sflUtilities.standardFilterObject(
+        "name",
+        null,
+        "Filter by Template"
+      ),
+      entries: null,
+      entryID: null,
+      entryLabel: null,
+      displayState: false,
+      entryState: null,
+      changeNextState: null,
+      entryIcon: (id: any): string => "card-checklist",
+      stateIcon: null,
+      loader: null,
+      // List Internal Representation
+      _internal: {
+        parentObject: null,
+        childObject: null,
+        entryIDs: [],
+        entries: {},
+      },
+    };
+
+    l.entries = () => l._internal.entryIDs;
+    l.entryID = (id: any): string => id;
+    l.entryLabel = (id: any): string => {
+      const entries: any = l._internal.entries;
+      return _.get(entries, `${id}.title`, "?Missing?");
+    };
+    l.entryState = (id: any): any => {
+      const entries: any = l._internal.entries;
+      return _.get(entries, `${id}.state`, -1);
+    };
+    l.changeNextState = async (id: any): Promise<any> => {
+      const entries: any = l._internal.entries;
+      const current: number = l.entryState(id);
+      switch (current) {
+        case 0: // Not in Organization
+          console.info(`Template [${id}] not in Organization`);
+          await apiStore.templates.add(l._internal.childObject, id);
+          _.set(entries, `${id}.state`, 1);
+          break;
+        case 1: // In Organization
+          console.info(`Template [${id}] in Organization`);
+          await apiStore.templates.delete(l._internal.childObject, id);
+          _.set(entries, `${id}.state`, 0);
+          break;
+        default:
+          console.error(`Template [${id}] in unknown state [${current}]`);
+      }
+    };
+
+    l.stateIcon = (s: any): string => {
+      switch (s as number) {
+        case 0:
+          return "square";
+        case 1:
+          return "check-square";
+        default:
+          return "question-square";
+      }
+    };
+
+    // Create Loader
+    l.loader = (): Promise<any> => templateListLoader(l);
+    return l;
+  }
+
   async function reloadInvitations(id: string): Promise<any> {
     try {
       // Reload nvitations List
@@ -532,6 +676,20 @@
       // TODO: Add Spinner
       store = await loadStore(id);
       storeUser = await loadStoreUser(id, user.id());
+
+      // Has Access to Template List?
+      if (
+        storeUser &&
+        storeUser
+          .roles()
+          .hasRole(
+            apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_TEMPLATE,
+            apiRoles.FUNCTION_LIST
+          )
+      ) {
+        // Display Template List
+        sflTemplatesList = createTemplatesList();
+      }
 
       // await reloadUsers(id);
       // await reloadInvitations(id);
@@ -745,6 +903,13 @@
         class="col-12 col-sm-6 p-0"
       />
     </div>
+    {#if sflTemplatesList && storeUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_TEMPLATE, apiRoles.FUNCTION_LIST)}
+      <div class="row mb-3">
+        <TemplateExplorer list={sflTemplatesList} class="px-0" />
+      </div>
+    {/if}
   {:else}
     <h1>Loading</h1>
   {/if}

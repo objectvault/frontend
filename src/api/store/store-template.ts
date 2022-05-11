@@ -9,95 +9,35 @@
  */
 
 // Libraries //
-import _ from "lodash";
-import ws_client from "../ws";
+import ws_templates from "../common/ws-template";
 
 async function getTemplates(store: string, params?: any): Promise<any> {
-  try {
-    let options: any = {
-      withCredentials: true,
-    };
-
-    // Do we have URL Params?
-    if (params) {
-      options.params = params;
-    }
-
-    // Request URL
-    let url: string = `/store/${store}/templates`;
-
-    // Request
-    const response = await ws_client().get(url, options);
-    console.log(response);
-
-    if (response.status != 200) {
-      throw new Error("Not a Valid Response");
-    }
-
-    if (!response.hasOwnProperty("data")) {
-      throw new Error("Not a Valid API Response");
-    }
-
-    let code = _.get(response, "data.code", null);
-    if (code !== 1000) {
-      throw new Error(`Unexpected Response Code [${code}]`);
-    }
-
-    // Return User List
-    return _.get(response, "data.data.templates", null);
-  } catch (e) {
-    throw e;
-  }
+  // Request URL
+  let url: string = `/store/${store}/templates`;
+  return ws_templates.list(url, params);
 }
 
 async function getTemplate(store: string, name: string, params?: any): Promise<any> {
-  try {
-    let options: any = {
-      withCredentials: true,
-    };
+  // Request URL
+  let url: string = `/store/${store}/template/${name}`;
+  return ws_templates.read(url, params);
+}
 
-    // Do we have URL Params?
-    if (params) {
-      options.params = params;
-    }
+async function addTemplate(store: string, name: string, params?: any): Promise<any> {
+  // Request URL
+  let url: string = `/store/${store}/template/${name}`;
+  return ws_templates.add(url, params);
+}
 
-    // Request URL
-    let url: string = `/store/${store}/template/${name}`;
-
-    // Request
-    const response = await ws_client().get(url, options);
-    console.log(response);
-
-    if (response.status != 200) {
-      throw new Error("Not a Valid Response");
-    }
-
-    if (!response.hasOwnProperty("data")) {
-      throw new Error("Not a Valid API Response");
-    }
-
-    let code = _.get(response, "data.code", null);
-    if (code !== 1000) {
-      throw new Error(`Unexpected Response Code [${code}]`);
-    }
-
-    // Have Template?
-    const t: any = _.get(response, "data.data.template", null)
-    if (t != null) { //YES
-      // Have String Model?
-      const m: any = _.get(t, "model", null)
-      if ((m != null) && _.isString(m)) { // YES: Convert to JSON
-        t.model = JSON.parse(m);
-      }
-    }
-    // Return Template
-    return t;
-  } catch (e) {
-    throw e;
-  }
+async function deleteTemplate(store: string, name: string, params?: any): Promise<any> {
+  // Request URL
+  let url: string = `/store/${store}/template/${name}`;
+  return ws_templates.delete(url, params);
 }
 
 export default {
   list: getTemplates,
   get: getTemplate,
+  add: addTemplate,
+  delete: deleteTemplate
 }
