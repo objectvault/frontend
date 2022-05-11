@@ -119,11 +119,11 @@
   let orgTitle: string = "";
   const toggleOrgModal = () => (orgOpen = !orgOpen);
 
-  // Reactive Stores //
-  $: notifyPopUp = $notifyStore;
-
   // Template List
   let sflTemplatesList: any = null;
+
+  // Reactive Stores //
+  $: notifyPopUp = $notifyStore;
 
   // Reactive Statements //
   $: sflUsersList = createUsersList(params.org);
