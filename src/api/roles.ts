@@ -1,4 +1,3 @@
-// cSpell:ignore ferreira, paulo, sourcenotes
 /*
  * This file is part of the ObjectVault Project.
  * Copyright (C) 2020-2022 Paulo Ferreira <vault at sourcenotes.org>
@@ -74,6 +73,7 @@ const mapNoCategoryFunctions: TMapCategoryFunctions = {
   0x0304: 0x0, // STORE: INVITATION
   0x0306: 0x0, // STORE: STORE PROFILE
   0x0307: 0x0, // STORE: OBJECTS
+  0x0308: 0x0, // STORE: TEMPLATES
 };
 
 function role(category: number, functions: number): number {
