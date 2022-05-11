@@ -15,7 +15,7 @@ import ws_client from "./ws";
 import invites from "./store/store-invite";
 import objects from "./store/store-objects";
 import session from "./store/store-session";
-import template from "./store/store-template";
+import templates from "./store/store-template";
 import users from "./store/store-user";
 
 async function getStoreProfile(store: string): Promise<any> {
@@ -55,6 +55,6 @@ export default {
   invites,
   objects,
   session,
-  template,
+  templates,
   users
 }
