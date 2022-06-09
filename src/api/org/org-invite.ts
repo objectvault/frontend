@@ -51,5 +51,6 @@ async function createInvite(org: string, invitation: any): Promise<any> {
 export default {
   list: invites.list, // ALIAS
   create: createInvite,
+  resend: invites.resend, // ALIAS
   delete: invites.delete // ALIAS
 }

@@ -9,7 +9,6 @@
  */
 
 // Libraries //
-import axios from "axios";
 import _ from "lodash";
 import ws_client from "../ws";
 
@@ -52,6 +51,7 @@ async function createInvite(store: string, invitation: any): Promise<any> {
 export default {
   list: invites.list, // ALIAS
   create: createInvite,
+  resend: invites.resend, // ALIAS
   delete: invites.delete // ALIAS
 }
 

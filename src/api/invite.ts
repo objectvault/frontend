@@ -48,7 +48,7 @@ async function getInviteNoSession(inviteID: string, params?: any): Promise<any> 
   }
 }
 
-async function getInvitiations(objectID: string, params?: any): Promise<any> {
+async function getInvitations(objectID: string, params?: any): Promise<any> {
   try {
     let options: any = {
       withCredentials: true,
@@ -119,7 +119,40 @@ async function acceptInvitation(uid: string, params: any): Promise<any> {
   }
 }
 
-async function deleteInvitation(uid: string): Promise<any> {
+async function resendInvitation(id: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/invite/${id}`;
+
+    // Request
+    const response = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    let code = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    // Return User
+    return _.get(response, "data.data", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function deleteInvitation(id: string): Promise<any> {
   try {
     let options: any = {
       withCredentials: true,
@@ -128,7 +161,7 @@ async function deleteInvitation(uid: string): Promise<any> {
     // TODO: Verify Implementation
 
     // Request URL
-    let url: string = `/invite/${uid}`;
+    let url: string = `/invite/${id}`;
 
     // Request
     const response = await ws_client().delete(url, options);
@@ -156,7 +189,8 @@ async function deleteInvitation(uid: string): Promise<any> {
 
 export default {
   getNoSession: getInviteNoSession,
-  list: getInvitiations,
+  list: getInvitations,
+  resend: resendInvitation,
   accept: acceptInvitation,
   delete: deleteInvitation
 }

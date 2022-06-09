@@ -716,6 +716,22 @@
   function entryActionsInvitationsList(entry: any): TAction[] {
     return [
       {
+        id: "invite.resend",
+        icon: "arrow-clockwise",
+        color: "info",
+        handler: async (a: TAction, entry: any) => {
+          console.info(`Clicked [${a.id}] on [${entry.invitee}]`);
+          try {
+            const i: any = await apiOrg.invites.resend(entry.id);
+            console.log(i);
+          } catch (e) {
+            console.error(e);
+          }
+        },
+        label: "Resend",
+        tooltip: "Resend Invitation",
+      },
+      {
         id: "invite.delete",
         icon: "trash",
         color: "danger",
