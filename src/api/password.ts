@@ -66,7 +66,7 @@ async function passwordReset(uid: string, password: string, params?: any): Promi
     }
 
     // Request URL
-    let url: string = `/passwod/${uid}`;
+    let url: string = `/password/${uid}`;
 
     // Request
     const response = await ws_client().post(url, json, options);

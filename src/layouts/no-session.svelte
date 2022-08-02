@@ -26,6 +26,7 @@
 
   // Developer Libraries //
   import apiSession from "../api/session";
+  import apiPassword from "../api/password";
 
   // ROUTING //
   import { push } from "svelte-spa-router";
@@ -51,6 +52,7 @@
 
   // LOGIN Modal //
   let bOpenLoginModal: boolean = false;
+  let bRecoveryMode: boolean = false;
 
   // PROPERTIES: Login Form //
   let sUser: string = "";
@@ -59,6 +61,10 @@
   let bInvalidPassword: boolean = true;
   let bActiveEye: boolean = false;
   let arMessagesLoginForm: string[] = [];
+
+  // PROPERTIES: Password Recovery Form //
+  let sEmail: string = "";
+  let bInvalidEmail: boolean = true;
 
   // Registered Event Listener
   let nListenerID: number = null;
@@ -77,6 +83,22 @@
   }
 
   // Login Form Validation //
+  function validateUserEmail(): string[] {
+    let arMessages: string[] = [];
+
+    let u: string = sEmail.trim();
+
+    if (u.length !== sEmail.length) {
+      arMessages.push("Email Can not contain spaces!");
+    }
+
+    if (u.length === 0) {
+      arMessages.push("Email Required");
+    }
+
+    return arMessages;
+  }
+
   function validateLoginUser(): string[] {
     let arMessages: string[] = [];
 
@@ -112,12 +134,16 @@
   }
 
   function validateLoginForm(): string[] {
-    const arUserMessages: string[] = validateLoginUser();
-    const arPasswordMessages: string[] = validateLoginPassword();
+    const arEmailMessages: string[] = !bRecoveryMode ? [] : validateUserEmail();
+    const arUserMessages: string[] = bRecoveryMode ? [] : validateLoginUser();
+    const arPasswordMessages: string[] = bRecoveryMode
+      ? []
+      : validateLoginPassword();
 
+    bInvalidEmail = arEmailMessages.length > 0;
     bInvalidUser = arUserMessages.length > 0;
     bInvalidPassword = arPasswordMessages.length > 0;
-    return [...arUserMessages, ...arPasswordMessages];
+    return [...arUserMessages, ...arPasswordMessages, ...arEmailMessages];
   }
 
   // EVENT Handlers //
@@ -137,11 +163,19 @@
     return false;
   }
 
+  function onToggleMode() {
+    bRecoveryMode = !bRecoveryMode;
+    arMessagesLoginForm = validateLoginForm();
+  }
+
   function onToggleLoginModal(e: PointerEvent) {
     // Stop Further Processing
     e.preventDefault();
 
     bOpenLoginModal = !bOpenLoginModal;
+    if (!bOpenLoginModal) {
+      bRecoveryMode = false;
+    }
   }
 
   async function onSubmitLogin(e: PointerEvent) {
@@ -151,11 +185,16 @@
     // Set Form Login Messages if Any
     arMessagesLoginForm = validateLoginForm();
 
-    // Get Current User
-    sUser = sUser.trim();
-
     // We have Valid Information?
-    if (arMessagesLoginForm.length === 0) {
+    if (arMessagesLoginForm.length) {
+      // NO: Abort
+      return;
+    }
+
+    if (!bRecoveryMode) {
+      // Get Current User
+      sUser = sUser.trim();
+
       try {
         const u: any = await apiSession.login(sUser, sUserPassword);
         push("/home");
@@ -167,6 +206,22 @@
 
         // Apply Error Meesage to Login Dialog
         arMessagesLoginForm = ["Login Failed"];
+      }
+    } else {
+      // Get User Email
+      sEmail = sEmail.trim();
+
+      try {
+        const u: any = await apiPassword.recover(sEmail);
+        push("/home");
+        return u;
+      } catch (e) {
+        // handle error
+        notify(e.toString());
+        console.log(e);
+
+        // Apply Error Meesage to Login Dialog
+        arMessagesLoginForm = ["Failed to send email", "Please try again"];
       }
     }
   }
@@ -199,51 +254,76 @@
   isOpen={bOpenLoginModal}
   toggle={onToggleLoginModal}
   centered={true}
-  header="Create Session"
+  header={bRecoveryMode ? "Recover Password" : "Create Session"}
 >
   <ModalBody>
     <form id="formLogin" class="my-2 needs-validation" novalidate>
       <div class="d-flex flex-column mx-auto" style="width: 80%;">
-        <InputGroup class="d-flex mb-1">
-          <InputGroupText id="lUser" class="col-3">User</InputGroupText>
-          <Input
-            id="iUser"
-            type="text"
-            class="col"
-            placeholder="User"
-            aria-label="User"
-            aria-describedby="lUser"
-            required
-            invalid={bInvalidUser}
-            bind:value={sUser}
-          />
-        </InputGroup>
-        <InputGroup class="d-flex mb-3">
-          <InputGroupText id="lPasswordLabel" class="col-3">
-            Password
-          </InputGroupText>
-          <Input
-            id="iUserPassword"
-            type={bActiveEye ? "text" : "password"}
-            class="col"
-            placeholder="Password"
-            aria-label="Password"
-            aria-describedby="lPasswordLabel"
-            required
-            invalid={bInvalidPassword}
-            bind:value={sUserPassword}
-          />
-          <Button
-            class="col-auto input-group-text"
-            tabindex={-1}
-            on:click={onShowPassword}
+        {#if bRecoveryMode}
+          <InputGroup class="d-flex mb-1">
+            <InputGroupText id="lEmail" class="col-3">Email</InputGroupText>
+            <Input
+              id="iEmail"
+              type="text"
+              class="col"
+              placeholder="Email"
+              aria-label="Email"
+              aria-describedby="lEmail"
+              required
+              invalid={bInvalidEmail}
+              bind:value={sEmail}
+            />
+          </InputGroup>
+          <div class="container-fluid">
+            By submitting a request, an email will be sent to the email address
+            provided (if, and oly if, the email points to an existing user).
+            Please follow the instructions provided in the email, to reset your
+            password.
+          </div>
+        {:else}
+          <InputGroup class="d-flex mb-1">
+            <InputGroupText id="lUser" class="col-3">User</InputGroupText>
+            <Input
+              id="iUser"
+              type="text"
+              class="col"
+              placeholder="User"
+              aria-label="User"
+              aria-describedby="lUser"
+              required
+              invalid={bInvalidUser}
+              bind:value={sUser}
+            />
+          </InputGroup>
+          <InputGroup class="d-flex mb-3">
+            <InputGroupText id="lPasswordLabel" class="col-3">
+              Password
+            </InputGroupText>
+            <Input
+              id="iUserPassword"
+              type={bActiveEye ? "text" : "password"}
+              class="col"
+              placeholder="Password"
+              aria-label="Password"
+              aria-describedby="lPasswordLabel"
+              required
+              invalid={bInvalidPassword}
+              bind:value={sUserPassword}
+            />
+            <Button
+              class="col-auto input-group-text"
+              tabindex={-1}
+              on:click={onShowPassword}
+            >
+              <Icon name="eye" />
+            </Button>
+          </InputGroup>
+          <button type="button" class="btn btn-link" on:click={onToggleMode}
+            >Lost Password?</button
           >
-            <Icon name="eye" />
-          </Button>
-        </InputGroup>
-        <a href="#" class="mb-2" tabindex={-1}>Lost Password?</a>
+        {/if}
         <Button type="submit" color="primary" on:click={onSubmitLogin}>
-          Sign In
+          {bRecoveryMode ? "Recover" : "Sign In"}
         </Button>
       </div>
     </form>
