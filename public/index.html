@@ -10,6 +10,13 @@
   <link rel='icon' type='image/png' href='/favicon.png'>
   <link rel='stylesheet' href='/build/bundle.css'>
 
+  <script>
+    // Default APP Config Handler (in case missing /assets/config.js)
+    function __app_config(prop, def) {
+      return def;
+    }
+  </script>
+  <script src='/assets/config.js'></script>
   <script defer src='/build/bundle.js'></script>
 </head>
 

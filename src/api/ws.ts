@@ -8,12 +8,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/// cSpell:ignore unversioned
 // Libraries //
 import axios, { AxiosInstance } from "axios";
 
 // DEFAULT Request Timeout
 const TIMEOUT: number = 1000;
-const SERVER_URL: string = "http://localhost:3000";
+
+// Get SERVICE API URL from GLOBAL (external file) or USE Default
+// @ts-ignore: __app_config is globally defined function
+const SERVER_URL: string = __app_config("API_SERVER_URL", "http://localhost:3000");
 
 // Create C-API Request Client (Unversioned)
 const ws_client_unversioned: AxiosInstance = axios.create({
