@@ -4,11 +4,16 @@ import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import url from '@rollup/plugin-url';
 import typescript from '@rollup/plugin-typescript';
+import strip from '@rollup/plugin-strip';
 import svelte from 'rollup-plugin-svelte';
 import sveltePreprocess from 'svelte-preprocess';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import postcss from 'rollup-plugin-postcss';
+
+// For Use as Pre-processor
+import conditional from 'rollup-plugin-conditional';
+import stripCode from 'rollup-plugin-strip-code';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -97,13 +102,24 @@ export default {
       browser: true,
       dedupe: ['svelte']
     }),
+    // Production Builds - Remove Conditional Code
+    conditional(production, [
+      stripCode({
+        start_comment: 'START.CHECKS',
+        end_comment: 'END.CHECKS'
+      })
+    ]),
     commonjs(),
     json(),
     typescript({
       sourceMap: !production,
       inlineSources: !production
     }),
-
+    // PRODUCTION: Remove console.*
+    production &&
+    strip({
+      sourceMap: false // Production has no sourceMaps
+    }),
     // In dev mode, call `npm run start` once
     // the bundle has been generated
     !production && serve(),
