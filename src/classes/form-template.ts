@@ -11,7 +11,7 @@
 // Other Libraries //
 import _ from "lodash";
 
-export class TemplateField {
+export class FieldTemplate {
   private _name: string = null;
   private _field: any = null;
 
@@ -55,7 +55,7 @@ export class TemplateField {
   }
 }
 
-export class TemplateGroup {
+export class GroupTemplate {
   private _name: string = null;
   private _group: any = null;
 
@@ -81,11 +81,14 @@ export class TemplateGroup {
 export class FormTemplate {
   private _name: string = null;
   private _version: number = null;
-  private _template: any = null;
   private _model: any = null;
 
   constructor(t: any) {
     this._import(t)
+  }
+
+  public static isOfType(o: any): boolean {
+    return o != null && typeof o === 'object' && '_name' in o && '_version' in o;
   }
 
   public name(): string {
@@ -108,10 +111,10 @@ export class FormTemplate {
     return this._extract(this._model, "display.groups", [])
   }
 
-  public group(n: string): TemplateGroup {
+  public group(n: string): GroupTemplate {
     const g: any = this._model.groups[n];
     if (g != null) {
-      return new TemplateGroup(n, g);
+      return new GroupTemplate(n, g);
     }
     return null;
   }
@@ -120,16 +123,15 @@ export class FormTemplate {
     return Object.keys(this._model.fields)
   }
 
-  public field(n: string): TemplateField {
+  public field(n: string): FieldTemplate {
     const f: any = this._model.fields[n];
     if (f != null) {
-      return new TemplateField(n, f);
+      return new FieldTemplate(n, f);
     }
     return null;
   }
 
   private _import(t: any) {
-    this._template = t;
     this._name = this._extractString(t, 'name', null);
     this._version = this._extractNumber(t, 'version', null);
 

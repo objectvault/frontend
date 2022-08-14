@@ -12,7 +12,7 @@
 import _ from "lodash";
 
 // Template API //
-import type { FormTemplate, TemplateField, TemplateGroup } from './form-template';
+import type { FormTemplate, FieldTemplate, GroupTemplate } from './form-template';
 import type { StoreObject } from './store-object';
 
 export class TemplateObjectAdaptor {
@@ -23,7 +23,7 @@ export class TemplateObjectAdaptor {
     return this._template.groups();
   }
 
-  public group(n: string): TemplateGroup {
+  public group(n: string): GroupTemplate {
     return this._template.group(n);
   }
 
@@ -31,12 +31,12 @@ export class TemplateObjectAdaptor {
     return this._template.fields();
   }
 
-  public field(n: string): TemplateField {
+  public field(n: string): FieldTemplate {
     return this._template.field(n);
   }
 
   public id(): string {
-    return this._object != null ? <string>this._object.id(true) : undefined;
+    return this._object != null ? this._object.id() : undefined;
   }
 
   public title(): string {
@@ -48,15 +48,15 @@ export class TemplateObjectAdaptor {
     if (this._object != null) {
       switch (n) {
         case "id":
-          return this._object.id(true);
+          return this._object.id();
         case "title":
           return this._object.title();
         default:
-          const f: TemplateField = this._template.field(n);
+          const f: FieldTemplate = this._template.field(n);
           if (f != null) {
             const p: string = f.path()
             if (p != null) {
-              return this._object.property(p, d);
+              return this._object.value(p, d);
             }
           }
       }
@@ -90,11 +90,11 @@ export class TemplateObjectAdaptor {
           this._object.setTitle(v)
           break;
         default:
-          const f: TemplateField = this._template.field(n);
+          const f: FieldTemplate = this._template.field(n);
           if (f != null) {
             const p: string = f.path()
             if (p != null) {
-              this._object.setProperty(p, v);
+              this._object.setValue(p, v);
             }
           }
       }
@@ -108,11 +108,11 @@ export class TemplateObjectAdaptor {
           this._object.setTitle(null)
           break;
         default:
-          const f: TemplateField = this._template.field(n);
+          const f: FieldTemplate = this._template.field(n);
           if (f != null) {
             const p: string = f.path()
             if (p != null) {
-              this._object.unsetProperty(p);
+              this._object.clearValue(p);
             }
           }
       }
