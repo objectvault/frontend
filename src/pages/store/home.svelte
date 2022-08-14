@@ -9,8 +9,12 @@
    * along with this program.  If not, see <https://www.gnu.org/licenses/>.
    */
 
+  /* START.CHECKS */
+  import du from "../../dev-utils";
+  /* END.CHECKS */
+
   // SVELTE API //
-  import { onDestroy } from "svelte";
+  import { onDestroy, tick } from "svelte";
 
   // SVELTESTRAP //
   import {
@@ -22,7 +26,6 @@
     Modal,
     ModalBody,
     ModalFooter,
-    ModalHeader,
   } from "sveltestrap";
 
   // Other Libraries
@@ -43,8 +46,8 @@
   import { Store } from "../../classes/store";
   import { StoreUser } from "../../classes/store-user";
   import { StoreObject } from "../../classes/store-object";
-  import { FormTemplate } from "../../classes/form-template";
   import { TemplateObjectAdaptor } from "../../classes/template-object-adapter";
+  import type { FormTemplate } from "../../classes/form-template";
   import type { User } from "../../classes/user";
   import type { TAction } from "../../objects/actions";
   import type { TSingleFieldList } from "../../objects/single-field-list";
@@ -53,9 +56,8 @@
   // CUSTOM Components //
   import Overlay from "../../components/overlay.svelte";
   import Spinner from "../../components/spinner.svelte";
-  import SearchableDropdown from "../../components/searchable-dropdown.svelte";
   import SingleFieldExplorer from "../../components/list-single-field.svelte";
-  import ObjectForm from "../../components/object/form.svelte";
+  import ObjectEditor from "../../components/store/object/editor.svelte";
 
   // Component Paramters //
   export let params: any = {}; // IN: Router - Route Parameters
@@ -88,12 +90,10 @@
     bActiveEye = !bActiveEye;
   };
 
-  // Object Dialog //
-  let displayObjectModal: boolean = false;
-  let objectModalMode: string = "create";
-  const toggleObjectModal = () => {
-    displayObjectModal = !displayObjectModal;
-  };
+  // Object Editor //
+  let displayObjectEditor: boolean = false;
+  let modeObjectEditor: string = "read";
+  let editorObject: StoreObject = null;
 
   // Object Properties //
   let currentTemplate: FormTemplate = null;
@@ -122,56 +122,6 @@
   // EVENTS //
   function onClickLogout(a: TAction) {
     EventEmitter.emit("do-logout");
-  }
-
-  async function onSubmitObject(e: CustomEvent) {
-    try {
-      const d: any = e.detail;
-      const mode: string = d.mode;
-      const object: TemplateObjectAdaptor = d.object;
-      const output: any = object.export();
-
-      console.log(`Object Submitted`);
-      // Object Create Function
-      const f: any = async () => {
-        try {
-          // Create Object
-          const o: any =
-            mode === "create"
-              ? await apiStore.objects.create(store.id(), ":0", output)
-              : await apiStore.objects.update(
-                  store.id(),
-                  ":0",
-                  object.id(),
-                  output
-                );
-
-          notify(mode === "create" ? "Object Created" : "Object Updated");
-
-          // Call List Reloader
-          sflUtilities.callReloader(sflObjectsList);
-        } catch (e) {
-          notify(e.toString());
-        }
-      };
-
-      // Clear any Pending Requests
-      clearPending();
-
-      // Is Store Open?
-      const b: boolean = await apiStore.session.isOpen(store.id());
-      if (b === false) {
-        // NO: Open with Pending Request
-        pending.push(f);
-        displayStoreLogin = true;
-      } else {
-        f();
-      }
-    } catch (e) {
-      notify(e.toString());
-    } finally {
-      displayObjectModal = false;
-    }
   }
 
   async function onOpenStore(e: PointerEvent) {
@@ -232,29 +182,22 @@
     try {
       console.info(`Deleting object [${deleteObject.title()}]`);
 
-      const f = async () => {
+      const callback = async () => {
+        const r: boolean = await deleteObject.wsDelete();
+        /*
         const r: any = await apiStore.objects.delete(
           deleteObject.store(),
-          <string>deleteObject.id(true)
+          deleteObject.id()
         );
+        */
         console.info(r);
+        deleteObject = null;
 
         // Call List Reloader
         sflUtilities.callReloader(sflObjectsList);
       };
 
-      // Clear any Pending Requests
-      clearPending();
-
-      // Is Store Open?
-      const b: boolean = await apiStore.session.isOpen(store.id());
-      if (b === false) {
-        // NO: Open with Pending Request
-        pending.push(f);
-        displayStoreLogin = true;
-      } else {
-        f();
-      }
+      openStoreForAction(callback);
     } catch (e) {
       // handle error
       notify(e.toString());
@@ -262,54 +205,87 @@
     }
   }
 
+  async function onObjectEditorAction(e: CustomEvent) {
+    const d: any = e.detail;
+
+    try {
+      let o: StoreObject = d.object;
+      let callback: any = null;
+
+      switch (d.action) {
+        case "error":
+          if (d.mount) {
+            // Wait for Next Rendering loop
+            // so that display of model has time to complete before we try to destroy it
+            await tick();
+          }
+
+          throw d.message;
+        case "close":
+        case "cancel":
+          break;
+        case "create":
+          // Flush Update if Store Open
+          callback = async () => {
+            await o.wsCreate(store.id());
+
+            displayObjectEditor = false;
+            editorObject = null;
+          };
+
+          break;
+        case "update":
+          // Flush Update if Store Open
+          callback = async () => {
+            await o.wsUpdate();
+
+            displayObjectEditor = false;
+            editorObject = null;
+          };
+          break;
+      }
+
+      if (callback) {
+        openStoreForAction(callback);
+      } else {
+        displayObjectEditor = false;
+        editorObject = null;
+      }
+    } catch (e) {
+      displayObjectEditor = false;
+      editorObject = null;
+      notify(e.toString());
+    }
+  }
+
   // ACTION HANDLERS //
   function onHandleObjectCreate(a: TAction) {
     console.info(`Clicked [${a.id}]`);
 
-    // Set Object to Display
-    object.setTemplate(currentTemplate);
-    object.setObject(new StoreObject());
-
     // Display Object Create Modal
-    objectModalMode = "create";
-    displayObjectModal = true;
+    modeObjectEditor = "create";
+    displayObjectEditor = true;
   }
 
   async function onHandleObjectView(o: StoreObject) {
     try {
       console.info(`Clicked [View Object] on [${o.title()}]`);
       // Object Create Function
-      const f: any = async () => {
-        const r: any = await apiStore.objects.read(
-          o.store(),
-          <string>o.id(true)
-        );
-        console.info(r);
-        o.hydrate(_.get(r, "values"));
+      const callback: any = async () => {
+        // Has the object been loaded?
+        if (!o.isLoaded()) {
+          // NO: Load it
+          await o.wsRefresh(true);
+        }
 
-        await _setObjectTemplate(o.store(), _.get(r, "template.name"));
-
-        // Set Object to Display
-        object.setTemplate(currentTemplate);
-        object.setObject(o);
+        editorObject = o;
 
         // Display Object View Modal
-        objectModalMode = "view";
-        displayObjectModal = true;
+        modeObjectEditor = "read";
+        displayObjectEditor = true;
       };
 
-      // Clear any Pending Requests
-      clearPending();
-
-      // Is Store Open?
-      const b: boolean = await apiStore.session.isOpen(store.id());
-      if (b === false) {
-        // NO: Open with Pending Request
-        pending.push(f);
-        displayStoreLogin = true;
-      } else {
-        f();
-      }
+      openStoreForAction(callback);
     } catch (e) {
       // handle error
       notify(e.toString());
@@ -321,37 +297,22 @@
     try {
       console.info(`Clicked [Update Object] on [${o.title()}]`);
       // Object Create Function
-      const f: any = async () => {
-        const r: any = await apiStore.objects.read(
-          o.store(),
-          <string>o.id(true)
-        );
-        console.info(r);
-        o.hydrate(_.get(r, "values"));
+      const callback: any = async () => {
+        // Has the object been loaded?
+        if (!o.isLoaded()) {
+          // NO: Load it
+          await o.wsRefresh(true);
+        }
 
-        await _setObjectTemplate(o.store(), _.get(r, "template.name"));
-
-        // Set Object to Display
-        object.setTemplate(currentTemplate);
-        object.setObject(o);
+        // Set Object to Update
+        editorObject = o;
 
         // Display Object Update Modal
-        objectModalMode = "update";
-        displayObjectModal = true;
+        modeObjectEditor = "update";
+        displayObjectEditor = true;
       };
 
-      // Clear any Pending Requests
-      clearPending();
-
-      // Is Store Open?
-      const b: boolean = await apiStore.session.isOpen(store.id());
-      if (b === false) {
-        // NO: Open with Pending Request
-        pending.push(f);
-        displayStoreLogin = true;
-      } else {
-        f();
-      }
+      openStoreForAction(callback);
     } catch (e) {
       // handle error
       notify(e.toString());
@@ -369,6 +330,44 @@
   }
 
   // HELPERS //
+  function clearPending() {
+    // Clear Pending
+    pending = [];
+  }
+
+  async function flushPending() {
+    // Loop through Pending Running Requests
+    pending.forEach(async (request: any) => {
+      try {
+        await request();
+      } catch (e) {
+        notify(e.toString());
+      }
+    });
+
+    // Clear Pending
+    pending = [];
+  }
+
+  async function openStoreForAction(callback: any) {
+    /* START.CHECKS */
+    !_.isFunction(callback) && du.throwMessage("Missing Callback");
+    /* END.CHECKS */
+
+    // Clear any Pending Requests
+    clearPending();
+
+    // Is Store Open?
+    const b: boolean = await apiStore.session.isOpen(store.id());
+    if (b === false) {
+      // NO: Open with Pending Request
+      pending.push(callback);
+      displayStoreLogin = true;
+    } else {
+      callback();
+    }
+  }
+
   function notify(n: any) {
     if (notifyPopUp) {
       (notifyPopUp as any)(n);
@@ -397,41 +396,6 @@
 
     bInvalidPassword = arPasswordMessages.length > 0;
     return [...arPasswordMessages];
-  }
-
-  function clearPending() {
-    // Clear Pending
-    pending = [];
-  }
-
-  async function flushPending() {
-    // Loop through Pending Running Requests
-    pending.forEach(async (request: any) => {
-      try {
-        await request();
-      } catch (e) {
-        notify(e.toString());
-      }
-    });
-
-    // Clear Pending
-    pending = [];
-  }
-
-  async function _setObjectTemplate(store: string, template: string) {
-    try {
-      const t: any = await apiStore.templates.get(store, template);
-      currentTemplate = new FormTemplate(t);
-      object.setTemplate(currentTemplate);
-      console.log(currentTemplate);
-    } catch (e) {
-      notify(e.toString());
-    }
-  }
-
-  async function setObjectTemplate(e: CustomEvent) {
-    console.log(`Choose Template: ${e.detail}`);
-    await _setObjectTemplate(store.id(), e.detail);
   }
 
   async function loadStore(id: string): Promise<Store> {
@@ -598,17 +562,6 @@
     ];
   }
 
-  function objectModalTitle(mode: string): string {
-    switch (mode) {
-      case "create":
-        return "Create Object";
-      case "update":
-        return "Update Object";
-      default:
-        return "Object View";
-    }
-  }
-
   // Page Initialization //
   async function start(): Promise<boolean> {
     console.log("start: store\\home.svelte");
@@ -717,57 +670,14 @@
   </ModalFooter>
 </Modal>
 
-<Modal
-  isOpen={displayObjectModal}
-  toggle={toggleObjectModal}
-  name="modalObjectModal"
->
-  <ModalHeader toggle={toggleObjectModal}>
-    {objectModalTitle(objectModalMode)}
-  </ModalHeader>
-  <ModalBody>
-    <InputGroup class="d-flex mb-3">
-      <InputGroupText class="col-3">Template</InputGroupText>
-      <SearchableDropdown
-        items={templates}
-        mapper={{
-          value: "name",
-          label: "title",
-        }}
-        select={currentTemplate != null ? currentTemplate.name() : null}
-        on:template={setObjectTemplate}
-        disabled={objectModalMode !== "create"}
-      />
-    </InputGroup>
-    <!--
-    <SearchableDropdown
-      items={templates}
-      mapper={(v, l) => {
-        switch (l) {
-          case "value":
-            return v.name;
-          case "label":
-            return v.title;
-          default:
-            return "missing";
-        }
-      }}
-    />
-    -->
-    {#if currentTemplate}
-      <ObjectForm
-        mode={objectModalMode}
-        {object}
-        on:onSubmitObject={onSubmitObject}
-      />
-    {/if}
-  </ModalBody>
-  {#if objectModalMode !== "view"}
-    <ModalFooter>
-      <div class="text-danger">Message</div>
-    </ModalFooter>
-  {/if}
-</Modal>
+{#if store && displayObjectEditor}
+  <ObjectEditor
+    mode={modeObjectEditor}
+    {store}
+    object={editorObject}
+    on:onHandleAction={onObjectEditorAction}
+  />
+{/if}
 
 <Modal
   isOpen={displayDeleteModal}

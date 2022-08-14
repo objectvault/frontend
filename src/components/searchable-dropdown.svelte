@@ -99,7 +99,7 @@
     if (selected == null || selected.name !== item.name) {
       // YES: Update
       selected = item;
-      dispatch("template", item.name);
+      dispatch("onSelect", item.name);
     }
   }
 

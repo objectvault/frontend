@@ -13,22 +13,27 @@
   import { createEventDispatcher } from "svelte";
 
   // SVELTESTAP
-  import { Button, Icon, Input, InputGroup, InputGroupText } from "sveltestrap";
-  import type { TemplateField } from "../../classes/form-template";
+  import { FormGroup, Input, Label } from "sveltestrap";
+  import type { FieldTemplate } from "../../../classes/form-template";
 
   // 3rd Party Libraries //
   import _ from "lodash";
 
   // Developer Libraries //
-  import utilities from "../../api/utilities";
+  import utilities from "../../../api/utilities";
+
+  // SVELTE Event Dispatcher
+  const dispatch = createEventDispatcher();
 
   // CONSTANTS
   const defaults: any = {
     // DEFAULTS Settings for fields that alias this Field Componet
     settings: {
-      password: {
-        confirmation: true,
-        eye: true,
+      text: {
+        html: false,
+      },
+      "text-html": {
+        html: true,
       },
     },
   };
@@ -39,22 +44,19 @@
   // MODULE EXPORTS
   export { classes as class };
   export let mode: string; // view, create, update
-  export let field: TemplateField; // Field Name
+  export let field: FieldTemplate; // Field Name
   export let value: string = ""; // Field Initial Value
 
   // Internal Variables
-  let bShowText: boolean = false;
-  let confirmation: string = ""; // Confirmation Initial Value
+  let inner: HTMLTextAreaElement;
 
+  // DEFAULT Options for fields that use text-area as UI
   // OBSERVERS
   $: _settings = fieldSettings(field);
   $: _validations = fieldValidations(field);
   $: _classes = utilities.classes.merge(
     utilities.strings.defaultOnEmpty(classes, "")
   );
-
-  // SVELTE Event Dispatcher
-  const dispatch = createEventDispatcher();
 
   // HELPERS //
   function defaultFieldValidations(t: string): any {
@@ -73,12 +75,12 @@
     return settings && settings.hasOwnProperty(t) ? settings[t] : {};
   }
 
-  function fieldValidations(f: TemplateField) {
+  function fieldValidations(f: FieldTemplate) {
     const d: any = defaultFieldValidations(f.type());
     return _.merge({}, d, f.validations());
   }
 
-  function fieldSettings(f: TemplateField) {
+  function fieldSettings(f: FieldTemplate) {
     const d: any = defaultFieldSettings(f.type());
     return _.merge({}, d, f.settings());
   }
@@ -88,50 +90,33 @@
   }
 
   // EVENT HANDLERS //
-  function onToggleShow(e: Event) {
-    e.preventDefault(); // NEEDED: Clicking on Button Closes Dialog
-    bShowText = !bShowText;
-  }
+  function onResize(e: InputEvent) {
+    inner.style.height = "auto";
+    inner.style.height = 4 + inner.scrollHeight + "px";
 
-  function onChangeValue(e: InputEvent) {
     dispatch("onFieldValueChanged", {
       field,
       value: (e.target as any).value,
     });
   }
 
-  function onChangeConfirmationValue(e: InputEvent) {
-    confirmation = (e.target as any).value;
-  }
   // HELPERS //
 </script>
 
-<InputGroup>
-  <InputGroupText class="col-3">{field.label()}</InputGroupText>
-  <Input
-    type={bShowText ? "text" : "password"}
-    value={value == null ? "" : value}
-    on:input={onChangeValue}
-    disabled={mode === "view"}
-  />
-  {#if setting("eye", true)}
-    <Button
-      class="col-auto input-group-text"
-      tabindex={-1}
-      on:click={onToggleShow}
-    >
-      <Icon name="eye" />
-    </Button>
-  {/if}
-</InputGroup>
-
-{#if mode !== "view" && setting("confirmation", true) && !bShowText}
-  <InputGroup>
-    <InputGroupText class="col-3">Confirmation</InputGroupText>
+{#if mode === "create" || mode === "update"}
+  <FormGroup>
+    <Label>{field.label()}</Label>
     <Input
-      type="password"
-      value={confirmation == null ? "" : confirmation}
-      on:input={onChangeConfirmationValue}
+      rows={1}
+      type="textarea"
+      bind:inner
+      value={value == null ? "" : value}
+      on:input={onResize}
     />
-  </InputGroup>
+  </FormGroup>
+{:else}
+  <div>
+    <Label>{field.label()}</Label>
+    <pre>{value == null ? "" : value}</pre>
+  </div>
 {/if}
