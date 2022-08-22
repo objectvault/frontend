@@ -8,8 +8,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Libraries //
+// 3rd Party Libraries //
 import forge from "node-forge";
+import _ from "lodash";
 
 // CONSTANTS //
 const OTYPE_NOTSET: number = 0;
@@ -134,11 +135,21 @@ function defaultOnEmpty(s: string, d = null): string {
   return d;
 }
 
+function trimStart(s: string): string {
+  return _.trimStart(s);
+}
+
+function trimEnd(s: string): string {
+  return _.trimEnd(s);
+}
+
 export default {
   strings: {
     isString: isString,
     isNullOrEmpty: isStringNullOrEmpty,
-    defaultOnEmpty: defaultOnEmpty
+    defaultOnEmpty: defaultOnEmpty,
+    trimStart,
+    trimEnd
   },
   hash: {
     calculate: hashString

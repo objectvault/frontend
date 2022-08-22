@@ -8,8 +8,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/* START.CHECKS */
+import du from "../dev-utils";
+/* END.CHECKS */
+
 // Other Libraries //
 import _ from "lodash";
+import { TemplateObjectAdaptor } from './template-object-adapter';
 
 export class FieldTemplate {
   private _name: string = null;
@@ -45,13 +50,115 @@ export class FieldTemplate {
     return this._field.hasOwnProperty('settings') ? this._field.settings : null;
   }
 
-  public validations(): any {
-    return this._field.hasOwnProperty('validations') ? this._field.validations : null;
+  public setting(n: string, d?: any): any {
+    const v: any = this.settings();
+    return v !== null && v.hasOwnProperty(n) ? v[n] : d;
+  }
+
+  public transforms(): any {
+    return this._field.hasOwnProperty('transforms') ? this._field.transforms : null;
+  }
+
+  public transform(n: string, d?: any): any {
+    const v: any = this.transforms();
+    return v !== null && v.hasOwnProperty(n) ? v[n] : d;
+  }
+
+  public checks(): any {
+    return this._field.hasOwnProperty('checks') ? this._field.checks : null;
+  }
+
+  public check(n: string, d?: any): any {
+    const v: any = this.checks();
+    return v !== null && v.hasOwnProperty(n) ? v[n] : d;
   }
 
   public path(): any {
     const p: string = this._field.path;
     return p != null ? p : this._name;
+  }
+}
+
+export class EnhancedFieldTemplate {
+  private _field: FieldTemplate = null;
+  private _settings: any = null;
+  private _checks: any = null;
+  private _transforms: any = null;
+
+  constructor(f: FieldTemplate, defaults: any) {
+    /* START.CHECKS */
+    (f == null || !(f instanceof FieldTemplate)) && ("Invalid Parameter Value for 'f'. FieldTemplate expected.");
+    (defaults == null || !_.isPlainObject(defaults)) && ("Invalid Parameter Value for 'defaults'. NULL or Plain Object expected.");
+    /* END.CHECKS */
+
+    this._field = f;
+    if (defaults == null) {
+      this._settings = f.settings();
+      this._checks = f.checks();
+      this._transforms = f.transforms();
+    } else {
+      this._settings = this._merge(defaults.settings, f.settings())
+      this._checks = this._merge(defaults.checks, f.checks())
+      this._transforms = this._merge(defaults.transforms, f.transforms())
+    }
+  }
+
+  protected _merge(defaults: any, template: any) {
+    if (defaults != null && template != null) {
+      return _.merge({}, defaults, template)
+    } else if (defaults != null) {
+      return _.merge({}, defaults)
+    } else if (template != null) {
+      return template
+    }
+    return null;
+  }
+
+  public name(): string {
+    return this._field.name();
+  }
+
+  public type(): string {
+    return this._field.type();
+  }
+
+  public label(): string {
+    return this._field.label();
+  }
+
+  public placeholder(d = null): string {
+    return this._field.placeholder(d);
+  }
+
+  public settings(): any {
+    return this._settings;
+  }
+
+  public setting(n: string, d?: any): any {
+    const v: any = this._settings;
+    return v !== null && v.hasOwnProperty(n) ? v[n] : d;
+  }
+
+  public transforms(): any {
+    return this._transforms;
+  }
+
+  public transform(n: string, d?: any): any {
+    const v: any = this._transforms;
+    return v !== null && v.hasOwnProperty(n) ? v[n] : d;
+  }
+
+  public checks(): any {
+    return this._checks;
+  }
+
+  public check(n: string, d?: any): any {
+    const v: any = this._checks;
+    return v !== null && v.hasOwnProperty(n) ? v[n] : d;
+  }
+
+  public path(): any {
+    return this._field.path();
   }
 }
 
