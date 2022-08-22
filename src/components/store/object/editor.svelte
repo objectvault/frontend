@@ -14,7 +14,7 @@
   /* END.CHECKS */
 
   // SVELTE API //
-  import { onMount, createEventDispatcher } from "svelte";
+  import { onMount, createEventDispatcher, tick } from "svelte";
 
   // SVELTESTRAP //
   import {
@@ -43,15 +43,16 @@
   // SVELTE Event Dispatcher
   const dispatch = createEventDispatcher();
 
-  // Component Paramters //
+  // Component Parameters //
   export let store: Store; // Store Profile
   export let object: StoreObject = null; // Store Object (REQUIRED: in edit / view mode)
   export let mode: string = "read"; // Operating Mode
+  export let isValid: boolean = true; // DEFAULT: Valid State
 
   // Object Properties //
   let templates: any[] = []; // List of Templates in Store
   let isOpen: boolean = true;
-  let isFormValid: boolean = false;
+  let isFormValid: boolean = isValid && mode !== "create";
   let isObjectModified: boolean = false;
   let inCreateMode: boolean = false; // CREATE: Have Accepted Template
   let objectTemplate: FormTemplate = null;
@@ -177,7 +178,7 @@
   // SVELTE LifeCycle
   onMount(async () => {
     try {
-      console.info("Mount");
+      console.info(`EDITOR MODE [${mode}]`);
       const sid: string = store.id();
       switch (mode) {
         case "create":
@@ -187,7 +188,7 @@
         case "update":
           /* START.CHECKS */
           object == null && du.throwMessage("Missing Object for Editor.");
-          !StoreObject.isOfType(object) &&
+          !(object instanceof StoreObject) &&
             du.throwMessage("Invalid Object Type.");
           /* END.CHECKS */
 
@@ -197,6 +198,9 @@
           throw `Invalid Editor Mode [${mode}]`;
       }
     } catch (e) {
+      // TODO: Improve Error Handling (Should Display Toast)
+      await tick();
+
       isOpen = false; // Close Dialog
       notifyOfError(e.toString(), true);
     }
@@ -212,6 +216,7 @@
       {#if objectTemplate}
         <ObjectForm
           {mode}
+          isValid={isFormValid}
           template={objectTemplate}
           values={getObjectValues()}
         />
@@ -222,6 +227,7 @@
           <ObjectForm
             {mode}
             template={objectTemplate}
+            isValid={isFormValid}
             on:onFormValuesChanged={onFormValuesChanged}
             on:onIsFormValidChanged={onIsFormValidChanged}
             values={getObjectValues()}
@@ -263,6 +269,7 @@
           <ObjectForm
             {mode}
             template={objectTemplate}
+            isValid={isFormValid}
             on:onFormValuesChanged={onFormValuesChanged}
             on:onIsFormValidChanged={onIsFormValidChanged}
           />

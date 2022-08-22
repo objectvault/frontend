@@ -31,6 +31,7 @@
   export let group: string; // Group Name
   export let values: any = null; // Group Values
   export let template: FormTemplate; // Form Template
+  export let isValid: boolean = true; // DEFAULT: Valid State
 
   // Component Variables
   let invalidElements: any = {}; // List Which Fields are Valid and Which are not
@@ -97,6 +98,7 @@
     class="mb-1"
     {mode}
     {field}
+    {isValid}
     value={getElementValue(field)}
     template={template.field(field)}
     on:onValueChanged={onValueChanged}

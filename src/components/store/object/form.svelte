@@ -34,6 +34,7 @@
   export let mode: string; // create, read, update
   export let template: FormTemplate = null; // Form Template
   export let values: any = null; // Form Values
+  export let isValid: boolean = true; // DEFAULT: Valid State
 
   // COMPONENT VARIABLES
   let invalidElements: any = {}; // List Which Form Elements are Valid and Which are not
@@ -92,8 +93,9 @@
     class="mb-1"
     {mode}
     field="__title"
-    template={template.field("__title")}
     value={getElementValue("__title")}
+    template={template.field("__title")}
+    {isValid}
     on:onValueChanged={onValueChanged}
     on:onIsValidChanged={onIsValidChanged}
   />
@@ -104,6 +106,7 @@
       {group}
       values={getElementValue(group)}
       {template}
+      {isValid}
       on:onValueChanged={onValueChanged}
       on:onIsValidChanged={onIsValidChanged}
     />
