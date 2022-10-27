@@ -26,7 +26,7 @@ async function passwordRecover(email: string, params?: any): Promise<boolean> {
     let url: string = `/password/${email}`;
 
     // Request
-    const response = await ws_client().delete(url, options);
+    const response: any = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -37,7 +37,7 @@ async function passwordRecover(email: string, params?: any): Promise<boolean> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -69,7 +69,7 @@ async function passwordReset(uid: string, password: string, params?: any): Promi
     let url: string = `/password/${uid}`;
 
     // Request
-    const response = await ws_client().post(url, json, options);
+    const response: any = await ws_client().post(url, json, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -80,7 +80,7 @@ async function passwordReset(uid: string, password: string, params?: any): Promi
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }

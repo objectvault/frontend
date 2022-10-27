@@ -25,7 +25,7 @@ async function getInviteNoSession(inviteID: string, params?: any): Promise<any> 
     let url: string = `/invitation/invite/${inviteID}`;
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -36,7 +36,7 @@ async function getInviteNoSession(inviteID: string, params?: any): Promise<any> 
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -63,7 +63,7 @@ async function getInvitations(objectID: string, params?: any): Promise<any> {
     let url: string = `/invites/${objectID}`;
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -74,7 +74,7 @@ async function getInvitations(objectID: string, params?: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -96,7 +96,7 @@ async function acceptInvitation(uid: string, params: any): Promise<any> {
     let url: string = `/invitation/accept/${uid}`;
 
     // Request
-    const response = await ws_client().post(url, params, options);
+    const response: any = await ws_client().post(url, params, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -107,7 +107,7 @@ async function acceptInvitation(uid: string, params: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -129,7 +129,7 @@ async function resendInvitation(id: string): Promise<any> {
     let url: string = `/invite/${id}`;
 
     // Request
-    const response = await ws_client().put(url, null, options);
+    const response: any = await ws_client().put(url, null, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -140,7 +140,7 @@ async function resendInvitation(id: string): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -164,7 +164,7 @@ async function deleteInvitation(id: string): Promise<any> {
     let url: string = `/invite/${id}`;
 
     // Request
-    const response = await ws_client().delete(url, options);
+    const response: any = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -175,7 +175,7 @@ async function deleteInvitation(id: string): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }

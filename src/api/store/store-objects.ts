@@ -27,7 +27,7 @@ async function listObjects(sid: string, pid: string, params?: any): Promise<any>
     let url: string = `/store/${sid}/objs/${pid}`;
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -38,7 +38,7 @@ async function listObjects(sid: string, pid: string, params?: any): Promise<any>
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -59,7 +59,7 @@ async function createObject(sid: string, pid: string, object: any): Promise<any>
     let url: string = `/store/${sid}/obj/${pid}`;
 
     // Request
-    const response = await ws_client().post(url, object, options);
+    const response: any = await ws_client().post(url, object, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -70,7 +70,7 @@ async function createObject(sid: string, pid: string, object: any): Promise<any>
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -92,7 +92,7 @@ async function readObject(store: string, object: string): Promise<any> {
     let url: string = `/store/${store}/obj/${object}`;
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -103,7 +103,7 @@ async function readObject(store: string, object: string): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -124,7 +124,7 @@ async function updateObject(sid: string, pid: string, oid: string, object: any):
     let url: string = `/store/${sid}/obj/${pid}/${oid}`;
 
     // Request
-    const response = await ws_client().put(url, object, options);
+    const response: any = await ws_client().put(url, object, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -135,7 +135,7 @@ async function updateObject(sid: string, pid: string, oid: string, object: any):
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -157,7 +157,7 @@ async function deleteObject(sid: string, oid: string): Promise<any> {
     let url: string = `/store/${sid}/obj/${oid}`;
 
     // Request
-    const response = await ws_client().delete(url, options);
+    const response: any = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -168,7 +168,7 @@ async function deleteObject(sid: string, oid: string): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }

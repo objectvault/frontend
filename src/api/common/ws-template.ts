@@ -26,7 +26,7 @@ async function listTemplates(url: string, params?: any): Promise<any> {
     }
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -37,7 +37,7 @@ async function listTemplates(url: string, params?: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -61,7 +61,7 @@ async function getTemplate(url: string, params?: any): Promise<any> {
     }
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -72,7 +72,7 @@ async function getTemplate(url: string, params?: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -91,7 +91,7 @@ async function addTemplate(url: string, params?: any): Promise<any> {
     };
 
     // Request
-    const response = await ws_client().post(url, params, options);
+    const response: any = await ws_client().post(url, params, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -102,7 +102,7 @@ async function addTemplate(url: string, params?: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -126,7 +126,7 @@ async function deleteTemplate(url: string, params?: any): Promise<any> {
     }
 
     // Request
-    const response = await ws_client().delete(url, options);
+    const response: any = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -137,7 +137,7 @@ async function deleteTemplate(url: string, params?: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }

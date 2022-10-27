@@ -23,7 +23,7 @@ async function hello(): Promise<any> {
     let url: string = "/session";
 
     // Request
-    const response = await ws_client(false).get(url, options);
+    const response: any = await ws_client(false).get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -67,7 +67,7 @@ async function login(user: number | string, password: string, json?: any): Promi
     let url: string = `/session/${user}`;
 
     // Request
-    const response = await ws_client().post(url, json, options);
+    const response: any = await ws_client().post(url, json, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -99,7 +99,7 @@ async function logout(): Promise<number> {
     let url: string = `/session`;
 
     // Request
-    const response = await ws_client().delete(url, options);
+    const response: any = await ws_client().delete(url, options);
     console.log(response);
 
     if (response.status != 200) {

@@ -27,7 +27,7 @@ async function getUsers(org: string, params?: any): Promise<any> {
     let url: string = `/org/${org}/users`;
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -38,7 +38,7 @@ async function getUsers(org: string, params?: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -60,7 +60,7 @@ async function getUser(org: string, user: string): Promise<any> {
     let url: string = `/org/${org}/user/${user}`;
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -71,7 +71,7 @@ async function getUser(org: string, user: string): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -101,7 +101,7 @@ async function setUserRoles(org: string, user: string, roles: string): Promise<s
     let url: string = `/org/${org}/user/${user}/roles`;
 
     // Request
-    const response = await ws_client().put(url, `roles=${roles}`, options);
+    const response: any = await ws_client().put(url, `roles=${roles}`, options);
     console.log(response);
 
     if (response.status != 200) {

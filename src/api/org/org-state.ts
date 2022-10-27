@@ -22,7 +22,7 @@ async function setOrgLockState(org: string, flag: boolean): Promise<number> {
     let url: string = `/org/${org}/lock/${flag}`;
 
     // Request
-    const response = await ws_client().put(url, null, options);
+    const response: any = await ws_client().put(url, null, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -33,7 +33,7 @@ async function setOrgLockState(org: string, flag: boolean): Promise<number> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -54,7 +54,7 @@ async function setOrgBlockState(org: string, flag: boolean): Promise<number> {
     let url: string = `/org/${org}/block/${flag}`;
 
     // Request
-    const response = await ws_client().put(url, null, options);
+    const response: any = await ws_client().put(url, null, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -65,7 +65,7 @@ async function setOrgBlockState(org: string, flag: boolean): Promise<number> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }

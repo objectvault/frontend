@@ -22,7 +22,7 @@ async function listOrganizations(): Promise<any> {
     let url: string = `/system/orgs`;
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -33,7 +33,7 @@ async function listOrganizations(): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -55,7 +55,7 @@ async function createOrganization(org: any): Promise<any> {
     let url: string = `/system/org`;
 
     // Request
-    const response = await ws_client().post(url, org, options);
+    const response: any = await ws_client().post(url, org, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -66,7 +66,7 @@ async function createOrganization(org: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }

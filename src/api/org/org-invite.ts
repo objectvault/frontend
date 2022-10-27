@@ -25,7 +25,7 @@ async function createInvite(org: string, invitation: any): Promise<any> {
     let url: string = `/org/${org}/invite`;
 
     // Request
-    const response = await ws_client().post(url, invitation, options);
+    const response: any = await ws_client().post(url, invitation, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -36,7 +36,7 @@ async function createInvite(org: string, invitation: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
