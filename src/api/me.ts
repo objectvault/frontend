@@ -14,6 +14,7 @@ import ws_client from "./ws";
 
 // Developer Libraries //
 import type { TPaging } from "./pager";
+import utilities from './utilities';
 
 async function myObjects(params?: any): Promise<any> {
   try {
@@ -30,7 +31,7 @@ async function myObjects(params?: any): Promise<any> {
     let url: string = "/me/objects";
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -41,7 +42,7 @@ async function myObjects(params?: any): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -63,7 +64,7 @@ async function myFavorites(): Promise<any> {
     let url: string = "/me/favorites";
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -74,7 +75,7 @@ async function myFavorites(): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -96,7 +97,7 @@ async function myToggleFavorite(o: string): Promise<any> {
     let url: string = `/me/favorite/toggle/${o}`;
 
     // Request
-    const response = await ws_client().put(url, null, options);
+    const response: any = await ws_client().put(url, null, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -107,7 +108,7 @@ async function myToggleFavorite(o: string): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -143,7 +144,7 @@ async function myOrgs(params?: any, pager?: TPaging): Promise<any> {
     let url: string = "/me/orgs";
 
     // Request
-    const response = await ws_client().get(url, options);
+    const response: any = await ws_client().get(url, options);
     console.log(response);
 
     if (response.status != 200) {
@@ -154,7 +155,7 @@ async function myOrgs(params?: any, pager?: TPaging): Promise<any> {
       throw new Error("Not a Valid API Response");
     }
 
-    let code = _.get(response, "data.code", null);
+    const code: number = _.get(response, "data.code", null);
     if (code !== 1000) {
       throw new Error(`Unexpected Response Code [${code}]`);
     }
@@ -165,7 +166,58 @@ async function myOrgs(params?: any, pager?: TPaging): Promise<any> {
   }
 }
 
+async function changePassword(currentPWD: string, newPassword: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Create JSON Request
+    let json: any = {
+      current: utilities.hash.calculate(currentPWD),
+      "new": utilities.hash.calculate(newPassword)
+    }
+
+    // Request URL
+    let url: string = "/me/password";
+
+    // Request
+    const response: any = await ws_client().post(url, json, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return {
+      error: false,
+      message: "OK"
+    }
+  } catch (e) {
+    if (e.isAxiosError) {
+      return {
+        error: true,
+        message: e.message
+      }
+    }
+    return {
+      error: true,
+      message: e.toString()
+    }
+  }
+}
+
 export default {
+  password: changePassword,
   objects: {
     list: myObjects,
     orgs: myOrgs

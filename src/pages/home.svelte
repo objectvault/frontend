@@ -64,6 +64,10 @@
     EventEmitter.emit("do-logout");
   }
 
+  function onShowProfile(a: TAction) {
+    EventEmitter.emit("show-profile");
+  }
+
   function onClickObject(e: CustomEvent) {
     // Get Object
     const o: any = e.detail;
@@ -89,6 +93,12 @@
     if (u != null) {
       // Add Logout Action
       actionsStore.set([
+        {
+          id: "profile",
+          icon: "person",
+          //          label: "Profile",
+          handler: onShowProfile,
+        },
         {
           id: "logout",
           icon: "box-arrow-left",

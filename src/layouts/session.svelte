@@ -10,13 +10,26 @@
    */
 
   // SVELTE //
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, tick } from "svelte";
 
   // SVELTESTRAP //
-  import { Button, Icon, Modal, ModalBody, ModalFooter } from "sveltestrap";
+  import {
+    Button,
+    Card,
+    CardBody,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+    Icon,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    Offcanvas,
+  } from "sveltestrap";
 
   // Developer Libraries //
   import apiSession from "../api/session";
+  import apiMe from "../api/me";
   import { User } from "../classes/user";
 
   // ROUTING //
@@ -38,6 +51,7 @@
   import Toaster from "../components/toaster/toaster.svelte";
   import type { TNotify } from "../components/toaster/store";
   import toasterStore from "../components/toaster/store";
+  import FormChangePassword from "../components/forms/form-change-password.svelte";
 
   // Component Variables //
   const title: string = "";
@@ -46,8 +60,13 @@
   let bDisplayLogoutModal: boolean = false;
   let arMessagesLoginForm: string[] = [];
 
+  // OFFCanvas //
+  let sMessageChangePWD: string = null;
+  let bOpenOffcanvas: boolean = false;
+  const toggle = () => (bOpenOffcanvas = !bOpenOffcanvas);
+
   // Registered Event Listener
-  let nListenerID: number = null;
+  let arListenerIDs: number[] = [];
 
   // Reactive Stores //
   $: user = $sessionUser;
@@ -74,9 +93,19 @@
     console.error(`Action [${id}] does not exist or is invalid`);
   }
 
-  function onShowLogoutModal(e: string): boolean {
+  function onShowLogoutModal(e: PointerEvent, bHideOffcanvas = false): boolean {
+    if (bHideOffcanvas) {
+      bOpenOffcanvas = false;
+    }
+
     arMessagesLoginForm = [];
     bDisplayLogoutModal = true;
+    return false;
+  }
+
+  function onShowProfile(e: string): boolean {
+    bOpenOffcanvas = true;
+    console.log("Show Offcanvas");
     return false;
   }
 
@@ -86,9 +115,11 @@
     bDisplayLogoutModal = !bDisplayLogoutModal;
   }
 
-  async function onLogout(e: PointerEvent) {
-    // Stop Further Processing
-    e.preventDefault();
+  async function onLogout(e?: PointerEvent) {
+    if (e != null) {
+      // Stop Further Processing
+      e.preventDefault();
+    }
 
     try {
       await apiSession.logout();
@@ -101,6 +132,27 @@
 
       // Apply Error Meesage to Login Dialog
       arMessagesLoginForm = ["Logout Failed"];
+    }
+  }
+
+  async function onChangePassword(e: CustomEvent) {
+    const d: any = e.detail;
+    console.log(`CURRENT [${d.current}] - NEW [${d.new}]`);
+    try {
+      const m: any = await apiMe.password(d.current, d.new);
+      if (!m.error) {
+        bOpenOffcanvas = false;
+        sMessageChangePWD = null;
+        d.reset();
+
+        // Close Session
+        await onLogout();
+      } else {
+        sMessageChangePWD = m.message ? m.message : "Application Error";
+      }
+    } catch (e) {
+      bOpenOffcanvas = false;
+      notify(e.toString());
     }
   }
 
@@ -134,13 +186,17 @@
   onMount(() => {
     // Setup Notification Handler
     notifyStore.handler(notify);
-    nListenerID = EventEmitter.on("do-logout", onShowLogoutModal);
+    arListenerIDs.push(EventEmitter.on("do-logout", onShowLogoutModal));
+    arListenerIDs.push(EventEmitter.on("show-profile", onShowProfile));
   });
 
   onDestroy(() => {
     // Release Notification Handler
     notifyStore.reset();
-    EventEmitter.removeListener(nListenerID);
+
+    for (let id of arListenerIDs) {
+      EventEmitter.removeListener(id);
+    }
   });
 
   // Delay Start
@@ -188,7 +244,7 @@
   <nav class="d-flex flex-row justify-content-between py-1 bg-dark">
     <div class="col-auto d-flex flex-row align-items-center">
       <div class="col-auto">
-        <a class="py-2" href="#" aria-label="Product">
+        <a class="py-2" href="#" aria-label="Logo">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -233,7 +289,7 @@
           class="btn-no-outline text-primary"
         >
           <Icon name={action.icon} />
-          {action.label}
+          {action.label ? action.label : ""}
         </Button>
       {/each}
     </div>
@@ -242,6 +298,25 @@
 
 <main class="container">
   <slot />
+
+  <Offcanvas isOpen={bOpenOffcanvas} {toggle} header="Profile" placement="end">
+    <Button color="danger" on:click={(e) => onShowLogoutModal(e, true)}>
+      <Icon name="arrow-left" />
+      Leave
+    </Button>
+    <hr />
+    <Card>
+      <CardHeader>
+        <CardTitle class="mb-0">Change Password</CardTitle>
+      </CardHeader>
+      <CardBody>
+        <FormChangePassword on:formSubmit={onChangePassword} />
+      </CardBody>
+      {#if sMessageChangePWD != null}
+        <CardFooter>{sMessageChangePWD}</CardFooter>
+      {/if}
+    </Card>
+  </Offcanvas>
 </main>
 
 <!-- Maintain outside of main as it affects placement -->
