@@ -70,6 +70,9 @@
     openCreateAcceptModal = !openCreateAcceptModal;
   };
 
+  // Disable Accept and Decline Buttons
+  let bDisableButtons: boolean = false;
+
   // FORM PROPERTIES //
   let sUser: string = "";
   let sUserName: string = "";
@@ -98,7 +101,22 @@
   // EVENTS //
   async function onDeclineInvitation(e: Event) {
     console.info(`${invitation.id} DECLINED`);
-    toggleDeclineInviteModal();
+
+    try {
+      toggleDeclineInviteModal();
+      const r: any = await apiInvite.invitation.decline(invitation.id);
+      bDisableButtons = true;
+      // Notify and Return Home
+      notify("Invitation Declined");
+      setTimeout(() => {
+        // Send back to Start Page
+        replace("/");
+      }, 1000);
+      console.log(r);
+    } catch (e) {
+      console.error(e);
+      notify(e);
+    }
   }
 
   async function onSimpleAccept(e: Event) {
@@ -112,10 +130,11 @@
     };
 
     try {
-      const u: any = await apiInvite.accept(invitation.id, params);
+      const u: any = await apiInvite.invitation.accept(invitation.id, params);
       toggleCreateAcceptModal();
     } catch (e) {
       console.error(e);
+      notify(e);
     }
   }
 
@@ -164,10 +183,15 @@
         session: true,
       };
 
-      await apiInvite.accept(invitation.id, params);
+      await apiInvite.invitation.accept(invitation.id, params);
 
-      // Go to Home Page
-      replace("/");
+      // Notify and Return Home
+      bDisableButtons = true;
+      notify("Invitation Accepted");
+      setTimeout(() => {
+        // Go to Home Page
+        replace("/");
+      }, 2000);
     } catch (e) {
       console.error(e);
     }
@@ -226,7 +250,7 @@
 
     try {
       // Accept Invitation
-      const user: any = await apiInvite.accept(invitation.id, {
+      const user: any = await apiInvite.invitation.accept(invitation.id, {
         name: form.name,
         alias: form.alias,
         hash: utilities.hash.calculate(form.password),
@@ -235,8 +259,13 @@
       // LOGIN
       await apiSession.login(user.id, form.password);
 
-      // Go to Home Page
-      replace("/");
+      // Notify and Return Home
+      bDisableButtons = true;
+      notify("Invitation Accepted");
+      setTimeout(() => {
+        // Go to Home Page
+        replace("/");
+      }, 2000);
     } catch (e) {
       console.error(e);
     }
@@ -289,7 +318,7 @@
 
   async function loadInvitation(uid: string): Promise<any> {
     try {
-      let o: any = await apiInvite.getNoSession(uid);
+      let o: any = await apiInvite.invitation.get(uid);
       return o;
     } catch (e) {
       throw e;
@@ -527,22 +556,22 @@
         <div class="row">
           <span class="col-6 text-center">
             <Button
-              type="submit"
               color="success"
               class="col"
               on:click={onAcceptSwitch}
+              disabled={bDisableButtons}
             >
               Accept
             </Button>
           </span>
           <span class="col-6 text-center">
-            <button
-              type="button"
-              class="btn btn-danger"
+            <Button
+              color="danger"
               on:click={toggleDeclineInviteModal}
+              disabled={bDisableButtons}
             >
               Decline
-            </button>
+            </Button>
           </span>
         </div>
       </div>

@@ -22,7 +22,7 @@ async function getInviteNoSession(inviteID: string, params?: any): Promise<any> 
     }
 
     // Request URL
-    let url: string = `/invitation/invite/${inviteID}`;
+    let url: string = `/invitation/${inviteID}`;
 
     // Request
     const response: any = await ws_client().get(url, options);
@@ -43,6 +43,72 @@ async function getInviteNoSession(inviteID: string, params?: any): Promise<any> 
 
     // Get Organization Invites
     return _.get(response, "data.data.invitation", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function acceptInvitation(uid: string, params: any): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/invitation/${uid}`;
+
+    // Request
+    const response: any = await ws_client().post(url, params, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    // Return User
+    return _.get(response, "data.data.user", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function declineInvitation(uid: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/invitation/${uid}`;
+
+    // Request
+    const response: any = await ws_client().delete(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    // Return Response (NULL)
+    return _.get(response, "data", null);
   } catch (e) {
     throw e;
   }
@@ -81,39 +147,6 @@ async function getInvitations(objectID: string, params?: any): Promise<any> {
 
     // Get Organization Invites
     return _.get(response, "data.data.invitations", null);
-  } catch (e) {
-    throw e;
-  }
-}
-
-async function acceptInvitation(uid: string, params: any): Promise<any> {
-  try {
-    let options: any = {
-      withCredentials: true,
-    };
-
-    // Request URL
-    let url: string = `/invitation/accept/${uid}`;
-
-    // Request
-    const response: any = await ws_client().post(url, params, options);
-    console.log(response);
-
-    if (response.status != 200) {
-      throw new Error("Not a Valid Response");
-    }
-
-    if (!response.hasOwnProperty("data")) {
-      throw new Error("Not a Valid API Response");
-    }
-
-    const code: number = _.get(response, "data.code", null);
-    if (code !== 1000) {
-      throw new Error(`Unexpected Response Code [${code}]`);
-    }
-
-    // Return User
-    return _.get(response, "data.data.user", null);
   } catch (e) {
     throw e;
   }
@@ -188,9 +221,13 @@ async function deleteInvitation(id: string): Promise<any> {
 }
 
 export default {
-  getNoSession: getInviteNoSession,
+  invitation: {
+    get: getInviteNoSession,
+    accept: acceptInvitation,
+    decline: declineInvitation,
+  },
+  // INVITATION Management //
   list: getInvitations,
   resend: resendInvitation,
-  accept: acceptInvitation,
   delete: deleteInvitation
 }
