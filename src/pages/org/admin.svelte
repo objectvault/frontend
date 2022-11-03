@@ -17,7 +17,6 @@
     Button,
     Form,
     FormGroup,
-    Icon,
     Input,
     InputGroup,
     InputGroupText,
@@ -61,6 +60,8 @@
   import SingleFieldExplorer from "../../components/list-single-field.svelte";
   import TemplateExplorer from "../../components/list-states.svelte";
   import RolesManager from "../../components/roles-manager.svelte";
+  import FormCreateOrg from "../../components/forms/form-create-org.svelte";
+  import FormCreateStore from "../../components/forms/form-create-store.svelte";
   //  import COrganization from "../admin/organization.svelte";
 
   // Component Paramters //
@@ -103,20 +104,12 @@
 
   // Store Create Modal Form //
   let storeOpen: boolean = false;
-  let storeDisplayPassword: boolean = false;
-  let storeAlias: string = "";
-  let storeTitle: string = "";
-  let storeUserPassword: string = "";
+  let storeMessages: string[] = [];
   const toggleStoreModal = () => (storeOpen = !storeOpen);
-  const toggleStoreDisplayPassword = (e: Event) => {
-    e.preventDefault();
-    storeDisplayPassword = !storeDisplayPassword;
-  };
 
   // Organization Create Modal Form //
   let orgOpen: boolean = false;
-  let orgAlias: string = "";
-  let orgTitle: string = "";
+  let orgMessages: string[] = [];
   const toggleOrgModal = () => (orgOpen = !orgOpen);
 
   // Template List
@@ -219,43 +212,20 @@
     toggleRolesModifyModal();
   }
 
-  async function onSubmitStoreCreate(e: Event) {
-    // Stop Form Submission
-    e.preventDefault();
+  function onMessagesStoreCreate(e: CustomEvent) {
+    const ms: any = e.detail;
+    storeMessages = ms ? ms : [];
+  }
+
+  async function onSubmitStoreCreate(e: CustomEvent) {
+    const d: any = e.detail;
+    console.log(`Store [${d.alias}] - [${d.title}]`);
 
     const store: any = {
-      alias: storeAlias.trim().toLocaleLowerCase(),
-      title: storeTitle,
-      password: storeUserPassword,
+      alias: d.alias.toLocaleLowerCase(),
+      title: d.title,
+      password: d.password,
     };
-
-    // TODO Exclude Offensive Words
-    const patternAlias = /[a-z][a-z0-9_.-]{2,}/;
-    const constraints: any = {
-      alias: {
-        presence: { allowEmpty: false },
-        length: { minimum: 3, maximum: 40 },
-        format: {
-          pattern: patternAlias,
-          message: "Invalid Store Alias",
-        },
-      },
-      title: {
-        presence: { allowEmpty: true },
-        length: { maximum: 80 },
-      },
-      password: {
-        presence: { allowEmpty: false },
-        length: { minimum: 8 },
-      },
-    };
-
-    const r: any = validate(store, constraints);
-
-    if (r) {
-      console.info("Store Parameters Validation Error");
-      return;
-    }
 
     try {
       // Hash User Password
@@ -269,43 +239,24 @@
       storeOpen = false;
       console.info(s);
     } catch (e) {
+      storeMessages.push(e.toString());
       console.error(e);
     }
   }
 
-  async function onSubmitOrgCreate(e: Event) {
-    // Stop Form Submission
-    e.preventDefault();
+  function onMessagesOrgCreate(e: CustomEvent) {
+    const ms: any = e.detail;
+    orgMessages = ms ? ms : [];
+  }
+
+  async function onSubmitOrgCreate(e: CustomEvent) {
+    const d: any = e.detail;
+    console.log(`Organization [${d.alias}] - [${d.title}]`);
 
     const org: any = {
-      alias: orgAlias.trim().toLocaleLowerCase(),
-      title: orgTitle,
+      alias: d.alias.toLocaleLowerCase(),
+      title: d.title,
     };
-
-    // TODO Exclude Offensive Words
-    const patternAlias = /[a-z][a-z0-9_.-]{2,}/;
-    const constraints: any = {
-      alias: {
-        presence: { allowEmpty: false },
-        length: { minimum: 4, maximum: 40 },
-        format: {
-          pattern: patternAlias,
-          message: "Invalid Organization Alias",
-        },
-      },
-      title: {
-        presence: { allowEmpty: true },
-        length: { maximum: 80 },
-      },
-    };
-
-    const r: any = validate(org, constraints);
-
-    if (r) {
-      console.error(r);
-      console.info("Organization Parameters Validation Error");
-      return;
-    }
 
     try {
       let o: any = await apiSystem.orgs.create(org);
@@ -315,6 +266,7 @@
       orgOpen = false;
       console.info(o);
     } catch (e) {
+      orgMessages.push(e.toString());
       console.error(e);
     }
   }
@@ -1149,81 +1101,35 @@
 <Modal isOpen={storeOpen} toggle={toggleStoreModal} name="modalCreateStore">
   <ModalHeader toggle={toggleStoreModal}>Create Store</ModalHeader>
   <ModalBody>
-    <Form id="formCreateStore" class="my-2" on:submit={onSubmitStoreCreate}>
-      <InputGroup class="d-flex mb-2">
-        <InputGroupText class="col-3">Alias</InputGroupText>
-        <Input
-          type="text"
-          name="store-alias"
-          placeholder="Store Alias"
-          required
-          bind:value={storeAlias}
-        />
-      </InputGroup>
-      <InputGroup class="d-flex mb-3">
-        <InputGroupText class="col-3">Title</InputGroupText>
-        <Input
-          type="text"
-          name="store-title"
-          placeholder="Store Title"
-          bind:value={storeTitle}
-        />
-      </InputGroup>
-      <InputGroup class="d-flex mb-3">
-        <InputGroupText class="col-3">Your Password</InputGroupText>
-        <Input
-          type={storeDisplayPassword ? "text" : "password"}
-          name="user-password"
-          class="col"
-          placeholder="Your Password"
-          aria-label="Password"
-          required
-          bind:value={storeUserPassword}
-        />
-        <Button
-          class="col-auto input-group-text"
-          on:click={toggleStoreDisplayPassword}
-        >
-          <Icon name="eye" />
-        </Button>
-      </InputGroup>
-      <Button type="submit" color="primary" class="w-100">Create</Button>
-    </Form>
+    <FormCreateStore
+      on:formSubmit={onSubmitStoreCreate}
+      on:formMessages={onMessagesStoreCreate}
+    />
   </ModalBody>
-  <ModalFooter>
-    <div class="text-danger">Message</div>
-  </ModalFooter>
+  {#if storeMessages.length}
+    <ModalFooter class="flex-column align-items-baseline text-danger">
+      {#each storeMessages as messsage}
+        <div>{messsage}</div>
+      {/each}
+    </ModalFooter>
+  {/if}
 </Modal>
 
 <Modal isOpen={orgOpen} toggle={toggleOrgModal} name="modalCreateOrg">
   <ModalHeader toggle={toggleOrgModal}>Create Organization</ModalHeader>
   <ModalBody>
-    <Form id="formCreateStore" class="my-2" on:submit={onSubmitOrgCreate}>
-      <InputGroup class="d-flex mb-2">
-        <InputGroupText class="col-3">Alias</InputGroupText>
-        <Input
-          type="text"
-          name="org-alias"
-          placeholder="Organization Alias"
-          required
-          bind:value={orgAlias}
-        />
-      </InputGroup>
-      <InputGroup class="d-flex mb-3">
-        <InputGroupText class="col-3">Title</InputGroupText>
-        <Input
-          type="text"
-          name="org-title"
-          placeholder="Organization Title"
-          bind:value={orgTitle}
-        />
-      </InputGroup>
-      <Button type="submit" color="primary" class="w-100">Create</Button>
-    </Form>
+    <FormCreateOrg
+      on:formSubmit={onSubmitOrgCreate}
+      on:formMessages={onMessagesOrgCreate}
+    />
   </ModalBody>
-  <ModalFooter>
-    <div class="text-danger">Message</div>
-  </ModalFooter>
+  {#if orgMessages.length}
+    <ModalFooter class="flex-column align-items-baseline text-danger">
+      {#each orgMessages as messsage}
+        <div>{messsage}</div>
+      {/each}
+    </ModalFooter>
+  {/if}
 </Modal>
 
 <main class="container">
