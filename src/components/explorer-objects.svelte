@@ -9,6 +9,8 @@
    * along with this program.  If not, see <https://www.gnu.org/licenses/>.
    */
 
+  // TODO: Disable on focus border for buttons
+
   // SVELTE API //
   import { onMount, createEventDispatcher } from "svelte";
 
@@ -26,6 +28,11 @@
   let list: any = null;
   let objects: any[] = [];
   let listFilters: any = {};
+  let filterToggleColors: any = {
+    favorite: "secondary",
+    org: "secondary",
+    store: "secondary",
+  };
   let titleFilter: string = "";
   let filterTimeoutID: any = null;
 
@@ -158,42 +165,57 @@
     }
   }
 
-  async function onToggleFilterFavorite() {
-    if (listFilters.hasOwnProperty("favorite")) {
-      delete listFilters.favorite;
-    } else {
-      listFilters.favorite = 1;
+  async function onToggleFilter(e: PointerEvent, toggle: string) {
+    // Stop Further Processing
+    e.preventDefault();
+
+    switch (toggle) {
+      case "favorite":
+        if (listFilters.hasOwnProperty("favorite")) {
+          delete listFilters.favorite;
+          filterToggleColors.favorite = "secondary";
+        } else {
+          listFilters.favorite = 1;
+          filterToggleColors.favorite = "primary";
+        }
+        break;
+      case "org":
+        if (listFilters.hasOwnProperty("type")) {
+          if (listFilters.type == 2) {
+            delete listFilters.type;
+            filterToggleColors.org = "secondary";
+          } else {
+            listFilters.type = 2;
+            filterToggleColors.org = "primary";
+            filterToggleColors.store = "secondary";
+          }
+        } else {
+          listFilters.type = 2;
+          filterToggleColors.org = "primary";
+        }
+        break;
+      case "store":
+        if (listFilters.hasOwnProperty("type")) {
+          if (listFilters.type == 3) {
+            delete listFilters.type;
+            filterToggleColors.store = "secondary";
+          } else {
+            listFilters.type = 3;
+            filterToggleColors.store = "primary";
+            filterToggleColors.org = "secondary";
+          }
+        } else {
+          listFilters.type = 3;
+          filterToggleColors.store = "primary";
+        }
+        break;
     }
 
+    // Update List
     await reloadList();
-  }
 
-  async function onToggleFilterOrg() {
-    if (listFilters.hasOwnProperty("type")) {
-      if (listFilters.type == 2) {
-        delete listFilters.type;
-      } else {
-        listFilters.type = 2;
-      }
-    } else {
-      listFilters.type = 2;
-    }
-
-    await reloadList();
-  }
-
-  async function onToggleFilterStore() {
-    if (listFilters.hasOwnProperty("type")) {
-      if (listFilters.type == 3) {
-        delete listFilters.type;
-      } else {
-        listFilters.type = 3;
-      }
-    } else {
-      listFilters.type = 3;
-    }
-
-    await reloadList();
+    // Update Button Colors
+    filterToggleColors = filterToggleColors;
   }
 
   function onClickLink(e: Event, o: any) {
@@ -283,23 +305,23 @@
         bind:value={titleFilter}
       />
       <Button
-        color="primary"
+        color={filterToggleColors.org}
         name="filterOrg"
-        on:click={() => onToggleFilterOrg()}
+        on:click={(e) => onToggleFilter(e, "org")}
       >
         <Icon name="building" />
       </Button>
       <Button
-        color="primary"
+        color={filterToggleColors.store}
         name="filterStore"
-        on:click={() => onToggleFilterStore()}
+        on:click={(e) => onToggleFilter(e, "store")}
       >
         <Icon name="sd-card-fill" />
       </Button>
       <Button
-        color="primary"
+        color={filterToggleColors.favorite}
         name="filterFavourite"
-        on:click={() => onToggleFilterFavorite()}
+        on:click={(e) => onToggleFilter(e, "favorite")}
       >
         <Icon name="star-fill" />
       </Button>
