@@ -16,7 +16,6 @@
 
   // SVELTESTRAP //
   import { Button, Form, Input, InputGroup, InputGroupText } from "sveltestrap";
-  import me from "../../api/me";
 
   // Application LIBRARIES //
   import utilities from "../../api/utilities";
