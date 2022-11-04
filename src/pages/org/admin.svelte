@@ -106,12 +106,10 @@
 
   // Store Create Modal Form //
   let storeOpen: boolean = false;
-  let storeMessages: string[] = [];
   const toggleStoreModal = () => (storeOpen = !storeOpen);
 
   // Organization Create Modal Form //
   let orgOpen: boolean = false;
-  let orgMessages: string[] = [];
   const toggleOrgModal = () => (orgOpen = !orgOpen);
 
   // Template List
@@ -236,7 +234,7 @@
       storeOpen = false;
       console.info(s);
     } catch (e) {
-      storeMessages.push(e.toString());
+      notify(e.toString());
       console.error(e);
     }
   }
@@ -258,7 +256,7 @@
       orgOpen = false;
       console.info(o);
     } catch (e) {
-      orgMessages.push(e.toString());
+      notify(e.toString());
       console.error(e);
     }
   }
