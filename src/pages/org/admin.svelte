@@ -63,6 +63,7 @@
   import RolesManager from "../../components/roles-manager.svelte";
   import FormCreateOrg from "../../components/forms/form-create-org.svelte";
   import FormCreateStore from "../../components/forms/form-create-store.svelte";
+  import ModalForm from "../../components/modal-form.svelte";
   //  import COrganization from "../admin/organization.svelte";
 
   // Component Paramters //
@@ -213,11 +214,6 @@
     toggleRolesModifyModal();
   }
 
-  function onMessagesStoreCreate(e: CustomEvent) {
-    const ms: any = e.detail;
-    storeMessages = ms ? ms : [];
-  }
-
   async function onSubmitStoreCreate(e: CustomEvent) {
     const d: any = e.detail;
     console.log(`Store [${d.alias}] - [${d.title}]`);
@@ -243,11 +239,6 @@
       storeMessages.push(e.toString());
       console.error(e);
     }
-  }
-
-  function onMessagesOrgCreate(e: CustomEvent) {
-    const ms: any = e.detail;
-    orgMessages = ms ? ms : [];
   }
 
   async function onSubmitOrgCreate(e: CustomEvent) {
@@ -1099,39 +1090,23 @@
   {/if}
 </Modal>
 
-<Modal isOpen={storeOpen} toggle={toggleStoreModal} name="modalCreateStore">
-  <ModalHeader toggle={toggleStoreModal}>Create Store</ModalHeader>
-  <ModalBody>
-    <FormCreateStore
-      on:formSubmit={onSubmitStoreCreate}
-      on:formMessages={onMessagesStoreCreate}
-    />
-  </ModalBody>
-  {#if storeMessages.length}
-    <ModalFooter class="flex-column align-items-baseline text-danger">
-      {#each storeMessages as messsage}
-        <div>{messsage}</div>
-      {/each}
-    </ModalFooter>
-  {/if}
-</Modal>
+<ModalForm
+  form={FormCreateStore}
+  isOpen={storeOpen}
+  toggle={toggleStoreModal}
+  name="modalCreateStore"
+  title="Create Store"
+  on:formSubmit={onSubmitStoreCreate}
+/>
 
-<Modal isOpen={orgOpen} toggle={toggleOrgModal} name="modalCreateOrg">
-  <ModalHeader toggle={toggleOrgModal}>Create Organization</ModalHeader>
-  <ModalBody>
-    <FormCreateOrg
-      on:formSubmit={onSubmitOrgCreate}
-      on:formMessages={onMessagesOrgCreate}
-    />
-  </ModalBody>
-  {#if orgMessages.length}
-    <ModalFooter class="flex-column align-items-baseline text-danger">
-      {#each orgMessages as messsage}
-        <div>{messsage}</div>
-      {/each}
-    </ModalFooter>
-  {/if}
-</Modal>
+<ModalForm
+  form={FormCreateOrg}
+  isOpen={orgOpen}
+  toggle={toggleOrgModal}
+  name="modalCreateOrg"
+  title="Create Organization"
+  on:formSubmit={onSubmitOrgCreate}
+/>
 
 <main class="container">
   {#if spinner}
