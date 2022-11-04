@@ -63,7 +63,7 @@
   export let params: any = {}; // IN: Router - Route Parameters
 
   // COMPONENT Bindable Paramters//
-  let spinner: boolean = false;
+  let spinner: boolean = true;
   let store: Store = null; // Store Profile
   let storeUser: StoreUser = null; // Registry: Store Session User Registry
   let user: User = null;
@@ -399,28 +399,18 @@
   }
 
   async function loadStore(id: string): Promise<Store> {
-    try {
-      let o: any = await apiStore.get(id);
-      const store: Store = new Store(o);
-      return store;
-    } catch (e) {
-      notify(e.toString());
-      return null;
-    }
+    let o: any = await apiStore.get(id);
+    const store: Store = new Store(o);
+    return store;
   }
 
   async function loadStoreUser(
     store: string,
     user: string
   ): Promise<StoreUser> {
-    try {
-      const r: any = await apiStoreUser.get(store, user);
-      const su: StoreUser = new StoreUser(r);
-      return su;
-    } catch (e) {
-      notify(e.toString());
-      return null;
-    }
+    const r: any = await apiStoreUser.get(store, user);
+    const su: StoreUser = new StoreUser(r);
+    return su;
   }
 
   async function reloadTemplates(id: string): Promise<any> {
@@ -589,9 +579,11 @@
 
       // Load List of Store Templates
       listOftemplates = await reloadTemplates(id);
+      spinner = false;
       return true;
     } catch (e) {
       notify(e.toString());
+      setTimeout(() => (spinner = false), 1000);
       return false;
     }
   }
@@ -742,7 +734,5 @@
     {#if storeUser && displayObjectList}
       <SingleFieldExplorer list={sflObjectsList} />
     {/if}
-  {:else}
-    <h1>Loading</h1>
   {/if}
 </main>

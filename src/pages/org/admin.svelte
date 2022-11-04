@@ -17,6 +17,7 @@
     Button,
     Form,
     FormGroup,
+    Icon,
     Input,
     InputGroup,
     InputGroupText,
@@ -1219,7 +1220,7 @@
                 .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_CREATE)}
                 <div name="actions" class="col-auto">
                   <Button color="primary" on:click={toggleStoreModal}>
-                    <i class="bi-plus-square" />
+                    <Icon name="plus-square" />
                     <span class="d-none d-md-inline">New Store</span>
                   </Button>
                 </div>
