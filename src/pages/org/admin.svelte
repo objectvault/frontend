@@ -65,7 +65,7 @@
   export let params: any = {}; // IN: Router - Route Parameters
 
   // Component Variables //
-  let spinner: boolean = false;
+  let spinner: boolean = true;
   let user: User = null; // Session User
   let organization: Organization = null; // Organization Object
   let organizationUser: OrganizationUser = null; // Registry: Organization Session User Registry
@@ -602,7 +602,9 @@
       let list: any = null;
       if (fv.length) {
         const filter: string = `contains(username, "${fv}")`;
-        list = await apiOrg.users.list(org, { filter });
+        list = await apiOrg.users.list(org, {
+          filter,
+        });
       } else {
         list = await apiOrg.users.list(org);
       }
@@ -684,7 +686,9 @@
       let fv: string = l.filter.get();
       if (fv.length) {
         const filter: string = `contains(invitee, "${fv}")`;
-        return apiOrg.invites.list(org, { filter });
+        return apiOrg.invites.list(org, {
+          filter,
+        });
       } else {
         return apiOrg.invites.list(org);
       }
@@ -698,11 +702,15 @@
 
     // CURRENTLY: Assume Child List CAN NOT contain entries that are not in the parent list
     // Parent List
-    const plist: any = await apiOrg.templates.system.list({ filter });
+    const plist: any = await apiOrg.templates.system.list({
+      filter,
+    });
 
     // Child List
     const clist: any = !organization.isSystem()
-      ? await apiOrg.templates.list(organization.id(), { filter })
+      ? await apiOrg.templates.list(organization.id(), {
+          filter,
+        })
       : null;
 
     // Display Template State
@@ -822,85 +830,60 @@
   }
 
   async function loadOrganization(id: string): Promise<Organization> {
-    try {
-      const r: any = await apiOrg.get(id);
-      const org: Organization = new Organization(r);
-      return org;
-    } catch (e) {
-      notify(e.toString());
-      return null;
-    }
+    const r: any = await apiOrg.get(id);
+    const org: Organization = new Organization(r);
+    return org;
   }
 
   async function loadOrganizationUser(
     org: string,
     user: string
   ): Promise<OrganizationUser> {
-    try {
-      const r: any = await apiOrgUser.get(org, user);
-      const ou: OrganizationUser = new OrganizationUser(r);
-      return ou;
-    } catch (e) {
-      notify(e.toString());
-      return null;
-    }
+    const r: any = await apiOrgUser.get(org, user);
+    const ou: OrganizationUser = new OrganizationUser(r);
+    return ou;
   }
 
   async function reloadStores(id: string): Promise<any> {
-    try {
-      // Reload Stores List
-      const list: any = await apiOrg.stores.list(id);
-      if (list != null) {
-        stores = list.items ? list.items : [];
-      }
-
-      if (stores.length == 0) {
-        console.log("Organization has No Stores");
-      }
-
-      return list;
-    } catch (e) {
-      notify(e.toString());
-      return null;
+    // Reload Stores List
+    const list: any = await apiOrg.stores.list(id);
+    if (list != null) {
+      stores = list.items ? list.items : [];
     }
+
+    if (stores.length == 0) {
+      console.log("Organization has No Stores");
+    }
+
+    return list;
   }
 
   async function reloadAllOrgs(): Promise<any> {
-    try {
-      // Reload Stores List
-      const list: any = await apiSystem.orgs.list();
-      if (list != null) {
-        allOrgs = list.items ? list.items : [];
-      }
-
-      if (allOrgs.length == 0) {
-        console.log("No Organizations");
-      }
-
-      return list;
-    } catch (e) {
-      notify(e.toString());
-      return null;
+    // Reload All Organizations in System
+    const list: any = await apiSystem.orgs.list();
+    if (list != null) {
+      allOrgs = list.items ? list.items : [];
     }
+
+    if (allOrgs.length == 0) {
+      throw "SYSTEM ERROR: No Organizations";
+    }
+
+    return list;
   }
 
   async function reloadAllUsers(): Promise<any> {
-    try {
-      // Reload Stores List
-      const list: any = await apiSystem.users.list();
-      if (list != null) {
-        allUsers = list.items ? list.items : [];
-      }
-
-      if (allUsers.length == 0) {
-        console.log("No Users");
-      }
-
-      return list;
-    } catch (e) {
-      notify(e.toString());
-      return null;
+    // Reload All Users in System
+    const list: any = await apiSystem.users.list();
+    if (list != null) {
+      allUsers = list.items ? list.items : [];
     }
+
+    if (allUsers.length == 0) {
+      throw "SYSTEM ERROR: No Users";
+    }
+
+    return list;
   }
 
   // Page Initialization //
@@ -930,19 +913,27 @@
             )
         ) {
           // YES: Load Stores
-          listOfStores = await reloadStores(id);
+          try {
+            listOfStores = await reloadStores(id);
+          } catch (e) {
+            notify("Failed to Load Stores List");
+            notify(e.toString());
+            listOfStores = null;
+          }
         } else {
           listOfStores = null;
         }
       } else {
-        // YES: Load All System Organizations and Users
+        // YES: Load All Organizations and Users
         listAllOrgs = await reloadAllOrgs();
         listAllUsers = await reloadAllUsers();
       }
 
+      spinner = false;
       return true;
     } catch (e) {
       notify(e.toString());
+      setTimeout(() => (spinner = false), 1000);
       return false;
     }
   }
@@ -1405,7 +1396,5 @@
         </div>
       {/if}
     {/if}
-  {:else}
-    <h1>Loading</h1>
   {/if}
 </main>
