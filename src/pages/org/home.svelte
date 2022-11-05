@@ -40,7 +40,7 @@
   export let params: any = {}; // IN: Router - Route Parameters
 
   // COMPONENT Bindable Paramters//
-  let spinner: boolean = false;
+  let spinner: boolean = true;
   let organization: Organization = null; // Organization Object
   let organizationUser: OrganizationUser = null; // Registry: Organization Session User Registry
   let user: User = null;
@@ -88,47 +88,32 @@
   }
 
   async function loadOrganization(id: string): Promise<Organization> {
-    try {
-      const r: any = await apiOrg.get(id);
-      const org: Organization = new Organization(r);
-      return org;
-    } catch (e) {
-      notify(e.toString());
-      return null;
-    }
+    const r: any = await apiOrg.get(id);
+    const org: Organization = new Organization(r);
+    return org;
   }
 
   async function loadOrganizationUser(
     org: string,
     user: string
   ): Promise<OrganizationUser> {
-    try {
-      const r: any = await apiOrgUser.get(org, user);
-      const ou: OrganizationUser = new OrganizationUser(r);
-      return ou;
-    } catch (e) {
-      notify(e.toString());
-      return null;
-    }
+    const r: any = await apiOrgUser.get(org, user);
+    const ou: OrganizationUser = new OrganizationUser(r);
+    return ou;
   }
 
   async function reloadStores(id: string): Promise<any> {
-    try {
-      // Reload Stores List
-      const list: any = await apiOrg.stores.list(id);
-      if (list != null) {
-        stores = list.items ? list.items : [];
-      }
-
-      if (stores.length == 0) {
-        console.log("Organization has No Stores");
-      }
-
-      return list;
-    } catch (e) {
-      notify(e.toString());
-      return null;
+    // Reload Stores List
+    const list: any = await apiOrg.stores.list(id);
+    if (list != null) {
+      stores = list.items ? list.items : [];
     }
+
+    if (stores.length == 0) {
+      notify("Organization has No Stores");
+    }
+
+    return list;
   }
 
   // Page Initialization //
@@ -155,7 +140,13 @@
             )
         ) {
           // YES: Load Stores
-          listOfStores = await reloadStores(id);
+          try {
+            listOfStores = await reloadStores(id);
+          } catch (e) {
+            notify("Failed to Load Stores List");
+            notify(e.toString());
+            listOfStores = null;
+          }
         } else {
           listOfStores = null;
         }
@@ -164,8 +155,10 @@
         replace(`/admin/org/${params.org}`);
       }
 
+      spinner = false;
       return true;
     } catch (e) {
+      setTimeout(() => (spinner = false), 1000);
       notify(e.toString());
       return false;
     }
@@ -313,7 +306,5 @@
         </ul>
       </div>
     {/if}
-  {:else}
-    <h1>Loading</h1>
   {/if}
 </main>

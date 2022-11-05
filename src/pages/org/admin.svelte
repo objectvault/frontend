@@ -932,8 +932,8 @@
       spinner = false;
       return true;
     } catch (e) {
-      notify(e.toString());
       setTimeout(() => (spinner = false), 1000);
+      notify(e.toString());
       return false;
     }
   }
