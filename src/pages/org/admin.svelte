@@ -16,12 +16,7 @@
   import {
     Button,
     Form,
-    FormGroup,
     Icon,
-    Input,
-    InputGroup,
-    InputGroupText,
-    Label,
     Modal,
     ModalBody,
     ModalFooter,
@@ -35,7 +30,6 @@
 
   // Other Libraries //
   import _ from "lodash";
-  import { validate } from "validate.js";
 
   // WebServices API Library //
   import apiOrg from "../../api/org";
@@ -63,8 +57,9 @@
   import RolesManager from "../../components/roles-manager.svelte";
   import FormCreateOrg from "../../components/forms/form-create-org.svelte";
   import FormCreateStore from "../../components/forms/form-create-store.svelte";
+  import FormInviteToOrg from "../../components/forms/form-invite-to-org.svelte";
   import ModalForm from "../../components/modal-form.svelte";
-  //  import COrganization from "../admin/organization.svelte";
+  import ExplorerObjectUsers from "../../components/explorer-object-users.svelte";
 
   // Component Paramters //
   export let params: any = {}; // IN: Router - Route Parameters
@@ -83,11 +78,7 @@
 
   // Invitation Modal Form //
   let inviteOpen: boolean = false;
-  let inviteEmail: string = "";
-  let inviteMessage: string = "";
   let inviteRefresh: any = null; // Invitation Refresh Callback
-  let inviteRoles: Roles = new Roles("33882113,33947651");
-  // NOTE: Organization READ Role (33882113) is RFEQUIRED and HIDDEN in invitation
 
   const toggleInvitationModal = (refresh = null) => {
     inviteRefresh = refresh;
@@ -126,46 +117,32 @@
   $: console.log(params);
 
   // EVENTS //
-  function onInvitationRolesModification(e: CustomEvent) {
-    const v: number = e.detail.value;
-    console.info(v.toString(16));
-    inviteRoles.set(v);
-  }
-
-  async function onSubmitInvitation(e: Event) {
-    // Stop Form Submission
-    e.preventDefault();
+  async function onSubmitOrgInvitation(e: CustomEvent) {
+    const d: any = e.detail;
 
     const invitation: any = {
-      invitee: inviteEmail.trim().toLowerCase(),
-      message: inviteMessage.trim(),
-      roles: inviteRoles.export(),
+      invitee: d.email.toLowerCase(),
+      message: d.message,
+      roles: d.roles,
     };
 
-    let constraints = {
-      invitee: {
-        presence: { allowEmpty: false },
-        email: true,
-      },
-      message: {
-        presence: { allowEmpty: true },
-      },
-    };
-
-    const r: any = validate(invitation, constraints);
-    if (r) {
-      console.info(r.invitee[0]);
-      return;
-    }
+    console.log(`Invite [${d.email}] - Org [${params.org}]`);
 
     try {
       let i: any = await apiOrg.invites.create(params.org, invitation);
+
+      // Close Modal
+      inviteOpen = false;
+
+      // Invitation List Refresh?
       if (inviteRefresh && _.isFunction(inviteRefresh)) {
         await inviteRefresh();
       }
-      toggleInvitationModal();
+
+      console.info(i);
     } catch (e) {
       notify(e);
+      console.error(ExplorerObjectUsers);
     }
   }
 
@@ -999,56 +976,14 @@
   <title>ObjectVault - Modify Organization [{params.org}]</title>
 </svelte:head>
 
-<Modal
+<ModalForm
+  form={FormInviteToOrg}
   isOpen={inviteOpen}
   toggle={toggleInvitationModal}
-  name="modalCreateInvite"
->
-  <ModalHeader toggle={toggleInvitationModal}>Invite User</ModalHeader>
-  <ModalBody>
-    <Form id="formCreateInvite" class="my-2" on:submit={onSubmitInvitation}>
-      <!--
-      <div class="d-flex flex-column mx-auto" style="width: 80%;">
-        -->
-      <InputGroup>
-        <InputGroupText>@</InputGroupText>
-        <Input
-          type="email"
-          name="email-invitee"
-          id="iInvitee"
-          placeholder="email of invitee"
-          required
-          bind:value={inviteEmail}
-        />
-      </InputGroup>
-      <FormGroup>
-        <Label for="iMessage">Message</Label>
-        <Input
-          type="textarea"
-          name="text"
-          id="iMessage"
-          placeholder="Message to Accompany Invite"
-          bind:value={inviteMessage}
-        />
-      </FormGroup>
-      <hr />
-      <RolesManager
-        labels={{
-          x: {
-            label: "Permissions in Organization",
-          },
-        }}
-        roles={invitationRolesToManagerList()}
-        on:roleModified={onInvitationRolesModification}
-      />
-      <hr />
-      <Button type="submit" color="primary" class="w-100">Send</Button>
-    </Form>
-  </ModalBody>
-  <ModalFooter>
-    <div class="text-danger">Message</div>
-  </ModalFooter>
-</Modal>
+  name="modalInviteToOrg"
+  title="Invite User"
+  on:formSubmit={onSubmitOrgInvitation}
+/>
 
 <Modal
   isOpen={rolesModifyModalOpen}
