@@ -51,6 +51,9 @@ const MASK_CATEGORY: number = 0x0F0F0000; // Mask Valid Category Bits
 const MASK_PERMISSIONS: number = 0x00000F0F; // Mask Valid Permission Bits
 const MASK_ROLE: number = 0x0F0F0F0F; // Mask Valid Role Bits
 
+// BITS offsets
+const OFFSET_CATEGORY: number = 16;
+
 // MAP of Categories to Functions in Category
 export type TMapCategoryFunctions = { [key: number]: number };
 export type TCategoryFilter = (c: number) => boolean;
@@ -79,16 +82,16 @@ const mapNoCategoryFunctions: TMapCategoryFunctions = {
 function role(category: number, functions: number): number {
   let c: number = category & MASK_CATEGORY_ANY;
   let f: number = functions & MASK_FUNCTION_ANY;
-  return (c << 16) | f;
+  return (c << OFFSET_CATEGORY) | f;
 }
 
-function category(role: number): number {
-  let c: number = (role >> 16) & MASK_CATEGORY_ANY;
+function roleCategory(role: number): number {
+  let c: number = (role >> OFFSET_CATEGORY) & MASK_CATEGORY_ANY;
   return c;
 }
 
-function subCategory(role: number): number {
-  let s: number = (role >> 16) & MASK_SUBCATEGORY_ONLY;
+function roleSubCategory(role: number): number {
+  let s: number = (role >> OFFSET_CATEGORY) & MASK_SUBCATEGORY_ONLY;
   return s;
 }
 
@@ -133,6 +136,14 @@ function isValidRole(role: number): boolean {
   return (role & MASK_ROLE) != 0;
 }
 
+function isEqualCategory(role: number, c: number): boolean {
+  return roleCategory(role) === c;
+}
+
+function isEqualFunctions(role: number, f: number): boolean {
+  return roleFunctions(role) === f;
+}
+
 function csvToRoles(csv: string): number[] {
   if (csv == null) {
     return [];
@@ -172,7 +183,7 @@ function extractRole(category: number,
   d?: number
 ) {
   // Calculate Role Category
-  let c = (category & MASK_CATEGORY_ANY) << 16
+  let c = (category & MASK_CATEGORY_ANY) << OFFSET_CATEGORY
 
   // Find Category in Roles
   let v: number = d == null ? c : d;
@@ -212,7 +223,7 @@ function mapRolesToCategory(roles: number[], all?: boolean | Function): { [key: 
       continue;
     }
 
-    map[category(role)] = role;
+    map[roleCategory(role)] = role;
   }
 
   return map;
@@ -247,17 +258,20 @@ export default {
   MASK_CATEGORY_ANY,
   MASK_CATEGORY_ONLY,
   MASK_SUBCATEGORY_ONLY,
+  OFFSET_CATEGORY,
   // Methods
   isValidRole,
   CSVToRoles: csvToRoles,
   rolesToCSV,
   role,
   extractRole,
-  category,
-  subCategory,
-  hasFunction,
+  roleCategory,
+  isEqualCategory,
+  roleSubCategory,
   roleFunctions,
+  isEqualFunctions,
   roleFunctionsKnown,
+  hasFunction,
   setFunction,
   clearFunction,
   toggleFunctions,
