@@ -53,7 +53,7 @@
   let sMessage: string = "";
 
   // NOTE: Organization READ Role (33882113) is REQUIRED and HIDDEN in invitation
-  let inviteRoles: Roles = new Roles();
+  let inviteRoles: Roles = new Roles("33882115");
 
   let bFormInvalid: boolean = false;
 
