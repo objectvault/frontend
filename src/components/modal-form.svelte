@@ -14,38 +14,24 @@
   // SVELTESTRAP //
   import { Modal, ModalBody, ModalFooter, ModalHeader } from "sveltestrap";
 
-  // Application LIBRARIES //
-  import utilities from "../api/utilities";
-
-  // TypeScript Types
-  type TMessageMap = {
-    [key: string]: string;
-  };
-
   // SVELTE Event Dispatcher
   const dispatch = createEventDispatcher();
 
   // SPECIAL EXPORT - Treat classes as class attribute
-  let _classes: string = null;
   let _name: string = null;
 
   // MODULE EXPORTS
-  export { _classes as class };
   export { _name as name };
   export let form: any;
   export let title: string;
   export let isOpen: boolean = false;
   export let toggle: any = null;
+  export let formProps: any = {};
 
   // COMPONENT Bindable Parameters//
   let arMessages: string[] = [];
 
   // OBSERVERS //
-
-  // Form Class
-  $: classes = utilities.classes.merge(
-    utilities.strings.defaultOnEmpty(classes, "my-2")
-  );
 
   // EVENTS //
   function onFormMessages(e: CustomEvent) {
@@ -68,6 +54,7 @@
       this={form}
       on:formSubmit={onSubmitForm}
       on:formMessages={onFormMessages}
+      {...formProps}
     />
   </ModalBody>
   {#if arMessages.length}
