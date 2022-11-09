@@ -19,6 +19,12 @@ async function getTemplates(org: string, params?: any): Promise<any> {
   return ws_templates.list(url, params);
 }
 
+async function getTemplatesForSystem(org: string, params?: any): Promise<any> {
+  // Request URL
+  let url: string = `/org/${org}/templates/system`;
+  return ws_templates.list(url, params);
+}
+
 async function getTemplate(org: string, name: string, params?: any): Promise<any> {
   // Request URL
   let url: string = `/org/${org}/template/${name}`;
@@ -55,6 +61,7 @@ export default {
     get: getSystemTemplate,
   },
   list: getTemplates,
+  listSystem: getTemplatesForSystem,
   get: getTemplate,
   add: addTemplate,
   delete: deleteTemplate

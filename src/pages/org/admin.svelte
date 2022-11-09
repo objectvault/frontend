@@ -442,9 +442,13 @@
 
     // CURRENTLY: Assume Child List CAN NOT contain entries that are not in the parent list
     // Parent List
-    const plist: any = await apiOrg.templates.system.list({
-      filter,
-    });
+    const plist: any = organization.isSystem()
+      ? await apiOrg.templates.system.list({
+          filter,
+        })
+      : await apiOrg.templates.listSystem(organization.id(), {
+          filter,
+        });
 
     // Child List
     const clist: any = !organization.isSystem()
