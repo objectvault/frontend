@@ -115,6 +115,10 @@ function hasFunction(role: number, f: number): boolean {
   return b;
 }
 
+function hasKnownFunction(role: number): boolean {
+  return roleFunctionsKnown(role) !== 0;
+}
+
 function setFunction(role: number, f: number): number {
   const r: number = role | (f & MASK_FUNCTION_ANY);
   return r;
@@ -272,6 +276,7 @@ export default {
   isEqualFunctions,
   roleFunctionsKnown,
   hasFunction,
+  hasKnownFunction,
   setFunction,
   clearFunction,
   toggleFunctions,
