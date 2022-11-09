@@ -20,6 +20,11 @@ const OTYPE_STORE: number = 0x03;
 const OTYPE_INVITATION: number = 0xFE;
 const OTYPE_OTHER: number = 0xFF;
 
+// REGEXP Patterns //
+const reAlias = /[a-z][a-z0-9_.-]{2,}/;
+const reEmail =
+  /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+
 // INTERNAL //
 function toClassName(value: any) {
   let result = "";
@@ -161,5 +166,9 @@ export default {
     isOrganization: isOrganizationObject,
     isStore: isStoreObject
   },
-  hasAsterisk
+  hasAsterisk,
+  patterns: {
+    alias: reAlias,
+    email: reEmail
+  }
 }
