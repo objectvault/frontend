@@ -19,8 +19,8 @@
   import _ from "lodash";
 
   // Developer Libraries //
+  import apiRoles from "../api/roles";
   import utilities from "../api/utilities";
-  import RoleAPI from "../api/roles";
 
   // SPECIAL EXPORT - Treat classes as class attribute
   let classes: string = null;
@@ -33,10 +33,10 @@
 
   // ROLE FUNCTIONS
   const _flags: any = {
-    read: RoleAPI.FUNCTION_READ_LIST,
-    create: RoleAPI.FUNCTION_CREATE,
-    update: RoleAPI.FUNCTION_UPDATE,
-    delete: RoleAPI.FUNCTION_DELETE,
+    read: apiRoles.FUNCTION_READ_LIST,
+    create: apiRoles.FUNCTION_CREATE,
+    update: apiRoles.FUNCTION_UPDATE,
+    delete: apiRoles.FUNCTION_DELETE,
   };
 
   const _flagIDs: string[] = Object.keys(_flags);
@@ -101,13 +101,13 @@
 
   function setRoleFlag(role: any, flagID: string): number {
     const old: number = role.value;
-    role.value = RoleAPI.setFunction(old, _flags[flagID]);
+    role.value = apiRoles.setFunction(old, _flags[flagID]);
     return old;
   }
 
   function clearRoleFlag(role: any, flagID: string): number {
     const old: number = role.value;
-    role.value = RoleAPI.clearFunction(old, _flags[flagID]);
+    role.value = apiRoles.clearFunction(old, _flags[flagID]);
     return old;
   }
 
