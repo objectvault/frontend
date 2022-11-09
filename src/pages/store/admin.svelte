@@ -60,6 +60,8 @@
   import SingleFieldExplorer from "../../components/list-single-field.svelte";
   import TemplateExplorer from "../../components/list-states.svelte";
   import RolesManager from "../../components/roles-manager.svelte";
+  import FormInviteToStore from "../../components/forms/form-invite-to-store.svelte";
+  import ModalForm from "../../components/modal-form.svelte";
 
   // Component Paramters //
   export let params: any = {}; // IN: Router - Route Parameters
@@ -74,14 +76,7 @@
 
   // Invitation Modal Form //
   let inviteOpen: boolean = false;
-  let inviteEmail: string = "";
-  let inviteMessage: string = "";
   let inviteRefresh: any = null; // Invitation Refresh Callback
-  let inviteRoles: Roles = new Roles("50724865,50790403");
-  let invitePassword: string = "";
-  let inviteShowPassword: boolean = false;
-  let inviteInvalidPassword: boolean = true;
-  // NOTE: Store READ Role (50724865) is REQUIRED and HIDDEN in invitation
 
   const toggleInvitationModal = (refresh = null) => {
     inviteRefresh = refresh;
@@ -116,61 +111,34 @@
     EventEmitter.emit("do-logout");
   }
 
-  function onToggleInviteShowPassword(e: Event) {
-    inviteShowPassword = !inviteShowPassword;
-  }
-
-  function onInvitationRolesModification(e: CustomEvent) {
-    const v: number = e.detail.value;
-    console.info(v.toString(16));
-    inviteRoles.set(v);
-  }
-
-  async function onSubmitInvitation(e: Event) {
-    // Stop Form Submission
-    e.preventDefault();
+  async function onSubmitStoreInvitation(e: CustomEvent) {
+    const d: any = e.detail;
 
     const invitation: any = {
-      invitee: inviteEmail.trim().toLowerCase(),
-      message: inviteMessage.trim(),
-      roles: inviteRoles.export(),
-      password: invitePassword,
+      invitee: d.email.toLowerCase(),
+      message: d.message,
+      roles: d.roles,
     };
 
-    let constraints = {
-      invitee: {
-        presence: { allowEmpty: false },
-        email: true,
-      },
-      message: {
-        presence: { allowEmpty: true },
-      },
-      password: {
-        presence: { allowEmpty: false },
-        length: { minimum: 8 },
-      },
-    };
-
-    const r: any = validate(invitation, constraints);
-    if (r) {
-      console.info(r.invitee[0]);
-      return;
-    }
+    console.log(`Invite [${d.email}] - Store [${params.store}]`);
 
     try {
-      // Calculcate Password Hash
-      let s: any = apiSession.login(user.id(), invitation.password, {
+      // Make Sure Session not Expired
+      let s: any = apiSession.login(user.id(), d.password, {
         reset: false,
         register: true,
       });
-      delete invitation.password;
 
       // Create Store Invite
       let i: any = await apiStore.invites.create(params.store, invitation);
+
+      // Close Modal
+      inviteOpen = false;
+
+      // Invitation List Refresh?
       if (inviteRefresh && _.isFunction(inviteRefresh)) {
         await inviteRefresh();
       }
-      toggleInvitationModal();
     } catch (e) {
       console.error(e);
     }
@@ -232,27 +200,6 @@
   function isSelf(id: string): boolean {
     // TODO: Check if ID Given Matches Session User ID
     return user != null && id == user.id();
-  }
-
-  function invitationRolesToManagerList(): any {
-    return {
-      Functions: [
-        {
-          id: "store",
-          label: "Store",
-          icon: "sd-card",
-          value: 0x03060003,
-          fixed: 0x0003,
-        },
-        {
-          id: "object",
-          label: "Objects",
-          icon: "archive",
-          value: 0x03070003,
-          fixed: 0x0003,
-        },
-      ],
-    };
   }
 
   function csvRolesToManagerList(r: Roles): any[] {
@@ -730,82 +677,14 @@
   <title>ObjectVault - Store Administration [{params.store}]</title>
 </svelte:head>
 
-<Modal
+<ModalForm
+  form={FormInviteToStore}
   isOpen={inviteOpen}
   toggle={toggleInvitationModal}
-  name="modalCreateInvite"
->
-  <ModalHeader toggle={toggleInvitationModal}>Invite User</ModalHeader>
-  <ModalBody>
-    <Form id="formCreateInvite" class="my-2" on:submit={onSubmitInvitation}>
-      <!--
-      <div class="d-flex flex-column mx-auto" style="width: 80%;">
-        -->
-      <InputGroup>
-        <InputGroupText>@</InputGroupText>
-        <Input
-          type="email"
-          name="email-invitee"
-          id="iInvitee"
-          placeholder="email of invitee"
-          required
-          bind:value={inviteEmail}
-        />
-      </InputGroup>
-      <FormGroup>
-        <Label for="iMessage">Message</Label>
-        <Input
-          type="textarea"
-          name="text"
-          id="iMessage"
-          placeholder="Message to Accompany Invite"
-          bind:value={inviteMessage}
-        />
-        <hr />
-        <RolesManager
-          labels={{
-            x: {
-              label: "Permissions in Organization",
-            },
-          }}
-          roles={invitationRolesToManagerList()}
-          on:roleModified={onInvitationRolesModification}
-        />
-        <hr />
-      </FormGroup>
-      <InputGroup class="d-flex mb-3">
-        <InputGroupText id="lPasswordLabel" class="col-4">
-          Your Password
-        </InputGroupText>
-        <Input
-          id="iUserPassword"
-          type={inviteShowPassword ? "text" : "password"}
-          class="col"
-          placeholder="Password"
-          aria-label="Password"
-          aria-describedby="lPasswordLabel"
-          required
-          invalid={inviteInvalidPassword}
-          bind:value={invitePassword}
-        />
-        <Button
-          class="col-auto input-group-text"
-          tabindex={-1}
-          on:click={onToggleInviteShowPassword}
-        >
-          <Icon name="eye" />
-        </Button>
-      </InputGroup>
-      <Button type="submit" color="primary" class="w-100">Send</Button>
-      <!--
-      </div>
-      -->
-    </Form>
-  </ModalBody>
-  <ModalFooter>
-    <div class="text-danger">Message</div>
-  </ModalFooter>
-</Modal>
+  name="modalInviteToOrg"
+  title="Invite User"
+  on:formSubmit={onSubmitStoreInvitation}
+/>
 
 <Modal
   isOpen={rolesModifyModalOpen}
