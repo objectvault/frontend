@@ -1,0 +1,350 @@
+<script lang="ts">
+  /*
+   * This file is part of the ObjectVault Project.
+   * Copyright (C) 2020-2022 Paulo Ferreira <vault at sourcenotes.org>
+   *
+   * This work is published under the GNU AGPLv3.
+   *
+   * You should have received a copy of the GNU Affero General Public License
+   * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+   */
+  // SVELTE API //
+  import { createEventDispatcher } from "svelte";
+
+  // SVELTESTRAP //
+  import { Button, Form } from "sveltestrap";
+
+  // CUSTOM Components //
+  import RolesManager from "../roles-manager.svelte";
+
+  // Application LIBRARIES //
+  import apiRoles from "../../api/roles";
+  import utilities from "../../api/utilities";
+  import { Role, Roles } from "../../classes/roles";
+
+  // SVELTE Event Dispatcher
+  const dispatch = createEventDispatcher();
+
+  // SPECIAL EXPORT - Treat classes as class attribute
+  let _classes: string = null;
+
+  // MODULE EXPORTS
+  export { _classes as class };
+  export let roles: Roles;
+  export let isSystemOrg: boolean = false;
+  export let isAdmin: boolean = false;
+  export let readOnly: boolean = false;
+
+  // COMPONENT Bindable Parameters//
+
+  // NOTE: Organization READ Role (33882113) is REQUIRED and HIDDEN in invitation
+  let updatedRoles: Roles = new Roles();
+
+  let bFormInvalid: boolean = false;
+
+  let classes: string = "";
+  let buttonColor: string = "primary";
+
+  // OBSERVERS //
+
+  // Form Class
+  $: classes = utilities.classes.merge(
+    utilities.strings.defaultOnEmpty(classes, "my-2")
+  );
+
+  // Submit Button Color
+  $: buttonColor = bFormInvalid ? "primary" : "success";
+
+  // Calculate Form Valid State
+  $: bFormInvalid = updatedRoles.isEmpty();
+
+  // Helpers //
+  function csvRolesToManagerList(r: Roles): any {
+    // ORGANIZATION 0 //
+    // NON ADMIN: CAN'T MODIFY ROLES (HAS TO BE ADMIN)
+    // ADMIN : HAS TO HAVE ROLES MODIFICATION RIGHTS //
+    // ADMIN : SELF
+    // 1 - CAN'T MODIFY ROLES
+    // 2 - CAN ONLY SEE ROLES IF HAS LIST ROLES PERMISSION
+
+    // ORGANIZATION != 0 //
+    // NON ADMIN: CAN'T MODIFY ROLES (HAS TO BE ADMIN)
+    // ADMIN : HAS TO HAVE ROLES MODIFICATION RIGHTS //
+    // ADMIN : SELF
+    // 1 - CAN'T MODIFY ROLES
+    // 2 - CAN ONLY SEE ROLES IF HAS LIST ROLES PERMISSION
+
+    // ORGANIZATION 0 : ROLES //
+    // SYSTEM ROLES : CROSS ORGANIZATION (ONLY: NO STORE PERMISSIONS) //
+    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_CONF   (ALL - SERVER CONFIGURATION)
+    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER   (ALL - SYSTEM LEVEL)
+    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ROLES  (ALL - ORGANIZATION LEVEL, EXCEPT 0))
+    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_INVITE (READ | LIST | DELETE ONLY : ORGANIZATION LEVEL EXCEPT 0)
+    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG    (ALL - ALL, EXCEPT 0)
+    // NORMAL ROLES :
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF   (ALL - ORGANIZATION CONFIGURATION)
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER   (ALL)
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES  (ALL)
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE (ALL)
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG    (ALL)
+
+    // ORGANIZATION !0 : ROLES //
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF   (ALL - ORGANIZATION CONFIGURATION)
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER   (ALL )
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES  (ALL)
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE (ALL)
+    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE  (ALL)
+
+    // Current Roles
+    const roles: number[] = apiRoles.CSVToRoles(r.export());
+    const system_roles: any[] = [
+      {
+        id: "conf",
+        label: "Settings",
+        icon: "gear-fill",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_CONF,
+          roles
+        ),
+      },
+      {
+        id: "user",
+        label: "User",
+        icon: "person",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+          roles
+        ),
+      },
+      {
+        id: "roles",
+        label: "Roles",
+        icon: "lock",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ROLES,
+          roles
+        ),
+      },
+    ];
+
+    const org_0_roles: any[] = [
+      {
+        id: "conf",
+        label: "Settings",
+        icon: "gear-fill",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF,
+          roles
+        ),
+      },
+      {
+        id: "user",
+        label: "User",
+        icon: "person",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
+          roles
+        ),
+      },
+      {
+        id: "roles",
+        label: "Roles",
+        icon: "lock",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
+          roles
+        ),
+      },
+      {
+        id: "invite",
+        label: "Invites",
+        icon: "envelope",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE,
+          roles
+        ),
+      },
+      {
+        id: "org",
+        label: "Orgs",
+        icon: "building",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
+          roles
+        ),
+      },
+      {
+        id: "templates",
+        label: "Templates",
+        icon: "file-text",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE,
+          roles
+        ),
+        fixed: apiRoles.FUNCTION_UPDATE,
+      },
+    ];
+
+    const org_not_0_roles: any[] = [
+      {
+        id: "conf",
+        label: "Settings",
+        icon: "gear-fill",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF,
+          roles
+        ),
+      },
+      {
+        id: "user",
+        label: "User",
+        icon: "person",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
+          roles
+        ),
+      },
+      {
+        id: "roles",
+        label: "Roles",
+        icon: "lock",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
+          roles
+        ),
+      },
+      {
+        id: "invite",
+        label: "Invites",
+        icon: "envelope",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE,
+          roles
+        ),
+      },
+      {
+        id: "org",
+        label: "Org",
+        icon: "building",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
+          roles
+        ),
+      },
+      {
+        id: "store",
+        label: "Store",
+        icon: "sd-card",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
+          roles
+        ),
+      },
+      {
+        id: "templates",
+        label: "Templates",
+        icon: "file-text",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE,
+          roles
+        ),
+        fixed: apiRoles.FUNCTION_UPDATE,
+      },
+    ];
+
+    const roles_list: any = {};
+    if (isSystemOrg) {
+      if (isAdmin) {
+        roles_list["System Functions"] = system_roles;
+      }
+      roles_list["Organization Functions"] = org_0_roles;
+    } else {
+      roles_list["Organization Functions"] = org_not_0_roles;
+    }
+
+    return roles_list;
+  }
+
+  // EVENTS //
+  function onUpdateRoles(e: CustomEvent) {
+    const v: number = e.detail.value;
+    const r: Role = new Role(v);
+
+    const existing: Role = roles.get(r.category());
+    const update: Role = updatedRoles.get(r.category());
+
+    // New update?
+    if (update === null) {
+      // YES: Has update modified existing role
+      if (existing !== null && existing.isEqual(update)) {
+        // NO: Skip
+        return;
+      }
+
+      updatedRoles = updatedRoles.add(r);
+      return;
+    }
+    // ELSE: Update to Update
+
+    // Has Update Changed?
+    if (update.isEqual(r)) {
+      // NO: Ignore
+      return;
+    }
+
+    // Any Existing Role Functions?
+    if (existing === null) {
+      // NO: Update Has any Function?
+      if (r.functions() !== 0) {
+        // YES: Update
+        updatedRoles = updatedRoles.add(r);
+      } else {
+        // NO: Delete Entry
+        updatedRoles = updatedRoles.del(r.category());
+      }
+      return;
+    }
+
+    // Is update a reset?
+    if (existing.isEqual(r)) {
+      // YES
+      updatedRoles = updatedRoles.del(r.category());
+      return;
+    }
+
+    updatedRoles = updatedRoles.add(update);
+    console.log(e);
+  }
+
+  function onSubmitForm(e: Event) {
+    // Stop Form Submission
+    e.preventDefault();
+
+    // Dispatch Invite Click
+    dispatch("formSubmit", {
+      roles: roles,
+      updateRoles: updatedRoles,
+    });
+  }
+
+  // LIFECYCLE MANAGEMENT //
+</script>
+
+<Form id="formOrgUserPermissions" class="my-2" on:submit={onSubmitForm}>
+  <RolesManager
+    labels={{
+      x: {
+        label: "Permissions in Organization",
+      },
+    }}
+    roles={csvRolesToManagerList(roles)}
+    {readOnly}
+    on:roleModified={onUpdateRoles}
+  />
+  {#if !readOnly}
+    <hr />
+    <Button type="submit" color="primary" class="w-100" disabled={bFormInvalid}
+      >Modify</Button
+    >
+  {/if}
+</Form>

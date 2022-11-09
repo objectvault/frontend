@@ -13,15 +13,7 @@
   import { onDestroy } from "svelte";
 
   // SVELTESTRAP //
-  import {
-    Button,
-    Form,
-    Icon,
-    Modal,
-    ModalBody,
-    ModalFooter,
-    ModalHeader,
-  } from "sveltestrap";
+  import { Button, Icon } from "sveltestrap";
 
   // STORES //
   import sessionUser from "../../stores/session-user";
@@ -41,7 +33,7 @@
   import utilities from "../../api/utilities";
   import EventEmitter from "../../api/event-emitter";
   import type { User } from "../../classes/user";
-  import { Role, Roles } from "../../classes/roles";
+  import type { Roles } from "../../classes/roles";
   import { Organization } from "../../classes/organization";
   import { OrganizationUser } from "../../classes/organization-user";
   import type { TAction } from "../../objects/actions";
@@ -54,10 +46,10 @@
   import Spinner from "../../components/spinner.svelte";
   import SingleFieldExplorer from "../../components/list-single-field.svelte";
   import TemplateExplorer from "../../components/list-states.svelte";
-  import RolesManager from "../../components/roles-manager.svelte";
   import FormCreateOrg from "../../components/forms/form-create-org.svelte";
   import FormCreateStore from "../../components/forms/form-create-store.svelte";
   import FormInviteToOrg from "../../components/forms/form-invite-to-org.svelte";
+  import FormOrgUserRoles from "../../components/forms/form-org-user-roles.svelte";
   import ModalForm from "../../components/modal-form.svelte";
   import ExplorerObjectUsers from "../../components/explorer-object-users.svelte";
 
@@ -88,9 +80,6 @@
   // User Permissions Modal Form //
   let rolesModifyModalOpen: boolean = false;
   let roleModifyEntry: OrganizationUser = null;
-  let rolesReadOnly: boolean = false;
-  let rolesToModify: any = null;
-  let updatedRoles: Roles = null;
 
   const toggleRolesModifyModal = () =>
     (rolesModifyModalOpen = !rolesModifyModalOpen);
@@ -146,22 +135,9 @@
     }
   }
 
-  function onUserRolesModification(e: CustomEvent) {
-    const v: number = e.detail.value;
-    const r: Role = new Role(v);
-
-    // Have Updated Roles?
-    if (updatedRoles == null) {
-      // NO: Create Container
-      updatedRoles = new Roles();
-    }
-    updatedRoles.add(r);
-    console.log(e);
-  }
-
-  async function onSubmitModifyUserRoles(e: Event) {
-    // Stop Form Submission
-    e.preventDefault();
+  async function onSubmitModifyUserRoles(e: CustomEvent) {
+    const d: any = e.detail;
+    const updatedRoles: Roles = d.updateRoles;
 
     // Entry Roles (SOURCE)
     const me: OrganizationUser = roleModifyEntry;
@@ -252,6 +228,22 @@
     console.log(n);
   }
 
+  function titleModalOrgUserRoles(ou: OrganizationUser): string {
+    const ro: boolean = isSelf(ou.user());
+    const username: string = ou.username();
+    const mode: string = ro ? "View" : "Modify";
+    return `${mode} ${username} Roles`;
+  }
+
+  function propsFormOrgUserRoles(ou: OrganizationUser): any {
+    return {
+      roles: ou.roles(),
+      readOnly: isSelf(ou.user()),
+      isSystemOrg: organization.isSystem(),
+      isSystemUser: ou.isAdmin(),
+    };
+  }
+
   function isSelf(id: string): boolean {
     // TODO: Check if ID Given Matches Session User ID
     return organizationUser != null && id == organizationUser.user();
@@ -259,255 +251,6 @@
 
   function isOrganizationAdmin(): boolean {
     return organizationUser != null && organizationUser.isAdmin();
-  }
-
-  function extractPermissions(
-    category: number,
-    perms: number[],
-    d?: number
-  ): number {
-    let v: number = d == null ? category : d;
-    for (const p of perms) {
-      if ((p & 0xffff0000) === category) {
-        v = p;
-      }
-    }
-
-    return v;
-  }
-
-  function invitationRolesToManagerList(): any {
-    if (organization.isSystem()) {
-      return {
-        Functions: [
-          {
-            id: "org",
-            label: "Org",
-            icon: "building",
-            value: 0x02050003,
-            fixed: 0x0003,
-          },
-        ],
-      };
-    } else {
-      return {
-        Functions: [
-          {
-            id: "store",
-            label: "Store",
-            icon: "sd-card",
-            value: 0x02060003,
-            fixed: 0x0003,
-          },
-        ],
-      };
-    }
-  }
-
-  function csvRolesToManagerList(r: Roles): any {
-    // ORGANIZATION 0 //
-    // NON ADMIN: CAN'T MODIFY ROLES (HAS TO BE ADMIN)
-    // ADMIN : HAS TO HAVE ROLES MODIFICATION RIGHTS //
-    // ADMIN : SELF
-    // 1 - CAN'T MODIFY ROLES
-    // 2 - CAN ONLY SEE ROLES IF HAS LIST ROLES PERMISSION
-
-    // ORGANIZATION != 0 //
-    // NON ADMIN: CAN'T MODIFY ROLES (HAS TO BE ADMIN)
-    // ADMIN : HAS TO HAVE ROLES MODIFICATION RIGHTS //
-    // ADMIN : SELF
-    // 1 - CAN'T MODIFY ROLES
-    // 2 - CAN ONLY SEE ROLES IF HAS LIST ROLES PERMISSION
-
-    // ORGANIZATION 0 : ROLES //
-    // SYSTEM ROLES : CROSS ORGANIZATION (ONLY: NO STORE PERMISSIONS) //
-    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_CONF   (ALL - SERVER CONFIGURATION)
-    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER   (ALL - SYSTEM LEVEL)
-    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ROLES  (ALL - ORGANIZATION LEVEL, EXCEPT 0))
-    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_INVITE (READ | LIST | DELETE ONLY : ORGANIZATION LEVEL EXCEPT 0)
-    // apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG    (ALL - ALL, EXCEPT 0)
-    // NORMAL ROLES :
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF   (ALL - ORGANIZATION CONFIGURATION)
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER   (ALL)
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES  (ALL)
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE (ALL)
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG    (ALL)
-
-    // ORGANIZATION !0 : ROLES //
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF   (ALL - ORGANIZATION CONFIGURATION)
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER   (ALL )
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES  (ALL)
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE (ALL)
-    // apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE  (ALL)
-
-    // Current Roles
-    const roles: number[] = apiRoles.CSVToRoles(r.export());
-    const system_roles: any[] = [
-      {
-        id: "conf",
-        label: "Settings",
-        icon: "gear-fill",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_CONF,
-          roles
-        ),
-      },
-      {
-        id: "user",
-        label: "User",
-        icon: "person",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
-          roles
-        ),
-      },
-      {
-        id: "roles",
-        label: "Roles",
-        icon: "lock",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ROLES,
-          roles
-        ),
-      },
-    ];
-
-    const org_0_roles: any[] = [
-      {
-        id: "conf",
-        label: "Settings",
-        icon: "gear-fill",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF,
-          roles
-        ),
-      },
-      {
-        id: "user",
-        label: "User",
-        icon: "person",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
-          roles
-        ),
-      },
-      {
-        id: "roles",
-        label: "Roles",
-        icon: "lock",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
-          roles
-        ),
-      },
-      {
-        id: "invite",
-        label: "Invites",
-        icon: "envelope",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE,
-          roles
-        ),
-      },
-      {
-        id: "org",
-        label: "Orgs",
-        icon: "building",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
-          roles
-        ),
-      },
-      {
-        id: "templates",
-        label: "Templates",
-        icon: "file-text",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE,
-          roles
-        ),
-        fixed: apiRoles.FUNCTION_UPDATE,
-      },
-    ];
-
-    const org_not_0_roles: any[] = [
-      {
-        id: "conf",
-        label: "Settings",
-        icon: "gear-fill",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_CONF,
-          roles
-        ),
-      },
-      {
-        id: "user",
-        label: "User",
-        icon: "person",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
-          roles
-        ),
-      },
-      {
-        id: "roles",
-        label: "Roles",
-        icon: "lock",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
-          roles
-        ),
-      },
-      {
-        id: "invite",
-        label: "Invites",
-        icon: "envelope",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE,
-          roles
-        ),
-      },
-      {
-        id: "org",
-        label: "Org",
-        icon: "building",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
-          roles
-        ),
-      },
-      {
-        id: "store",
-        label: "Store",
-        icon: "sd-card",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
-          roles
-        ),
-      },
-      {
-        id: "templates",
-        label: "Templates",
-        icon: "file-text",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE,
-          roles
-        ),
-        fixed: apiRoles.FUNCTION_UPDATE,
-      },
-    ];
-
-    const roles_list: any = {};
-    if (organization.isSystem()) {
-      if (organizationUser.isAdmin()) {
-        roles_list["System Functions"] = system_roles;
-      }
-      roles_list["Organization Functions"] = org_0_roles;
-    } else {
-      roles_list["Organization Functions"] = org_not_0_roles;
-    }
-
-    return roles_list;
   }
 
   function hasPageUp(l: any) {
@@ -545,9 +288,6 @@
         handler: (a: TAction) => {
           console.info(`Clicked [${a.id}] on [${entry.username()}]`);
           roleModifyEntry = entry;
-          rolesToModify = csvRolesToManagerList(entry.roles());
-          updatedRoles = null;
-          rolesReadOnly = self;
           toggleRolesModifyModal();
         },
         label: "Roles",
@@ -967,70 +707,46 @@
   <title>ObjectVault - Modify Organization [{params.org}]</title>
 </svelte:head>
 
-<ModalForm
-  form={FormInviteToOrg}
-  isOpen={inviteOpen}
-  toggle={toggleInvitationModal}
-  name="modalInviteToOrg"
-  title="Invite User"
-  on:formSubmit={onSubmitOrgInvitation}
-/>
+{#if user && organization}
+  <ModalForm
+    form={FormInviteToOrg}
+    isOpen={inviteOpen}
+    toggle={toggleInvitationModal}
+    name="modalInviteToOrg"
+    title="Invite User"
+    on:formSubmit={onSubmitOrgInvitation}
+  />
 
-<Modal
-  isOpen={rolesModifyModalOpen}
-  toggle={toggleRolesModifyModal}
-  name="modalEditUserPermissions"
->
-  <ModalHeader toggle={toggleRolesModifyModal}
-    >{rolesReadOnly ? "Viewing" : "Modifying"}
-    {roleModifyEntry.username()} Roles</ModalHeader
-  >
-  <ModalBody>
-    <Form
-      id="formEditUserPermissions"
-      class="my-2"
-      on:submit={onSubmitModifyUserRoles}
-    >
-      <RolesManager
-        labels={{
-          x: {
-            label: "Permissions in Organization",
-          },
-        }}
-        roles={rolesToModify}
-        readOnly={rolesReadOnly}
-        on:roleModified={onUserRolesModification}
-      />
-      {#if !rolesReadOnly}
-        <hr />
-        <Button type="submit" color="primary" class="w-100">Modify</Button>
-      {/if}
-    </Form>
-  </ModalBody>
-  {#if !rolesReadOnly}
-    <ModalFooter>
-      <div class="text-danger">Message</div>
-    </ModalFooter>
+  {#if roleModifyEntry}
+    <ModalForm
+      form={FormOrgUserRoles}
+      isOpen={rolesModifyModalOpen}
+      toggle={toggleRolesModifyModal}
+      name="modalOrgUserRoles"
+      title={titleModalOrgUserRoles(roleModifyEntry)}
+      on:formSubmit={onSubmitModifyUserRoles}
+      formProps={propsFormOrgUserRoles(roleModifyEntry)}
+    />
   {/if}
-</Modal>
 
-<ModalForm
-  form={FormCreateStore}
-  isOpen={storeOpen}
-  toggle={toggleStoreModal}
-  name="modalCreateStore"
-  title="Create Store"
-  on:formSubmit={onSubmitStoreCreate}
-/>
+  <ModalForm
+    form={FormCreateStore}
+    isOpen={storeOpen}
+    toggle={toggleStoreModal}
+    name="modalCreateStore"
+    title="Create Store"
+    on:formSubmit={onSubmitStoreCreate}
+  />
 
-<ModalForm
-  form={FormCreateOrg}
-  isOpen={orgOpen}
-  toggle={toggleOrgModal}
-  name="modalCreateOrg"
-  title="Create Organization"
-  on:formSubmit={onSubmitOrgCreate}
-/>
+  <ModalForm
+    form={FormCreateOrg}
+    isOpen={orgOpen}
+    toggle={toggleOrgModal}
+    name="modalCreateOrg"
+    title="Create Organization"
+    on:formSubmit={onSubmitOrgCreate}
+  />
+{/if}
 
 <main class="container">
   {#if spinner}
