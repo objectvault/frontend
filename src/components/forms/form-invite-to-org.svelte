@@ -39,7 +39,6 @@
 
   // SVELTE Event Dispatcher
   const dispatch = createEventDispatcher();
-  const patternAlias = /[a-z][a-z0-9_.-]{2,}/;
 
   // SPECIAL EXPORT - Treat classes as class attribute
   let _classes: string = null;
@@ -94,8 +93,8 @@
       if (!messages.hasOwnProperty(k)) {
         messages[k] = m;
         modified = true;
-        set = true;
       }
+      set = true;
     }
 
     // Has the Messages Map been Modified?
@@ -129,13 +128,13 @@
       sEmail.length == 0 ? "EMAIL: Missing" : null
     );
     if (!bInvalidEmail) {
-      bInvalidEmail ||= setMessage(
+      bInvalidEmail = setMessage(
         "email-min",
         sEmail.length < 6 ? "EMAIL: Minimum Length is 6" : null
       );
       bInvalidEmail ||= setMessage(
-        "alias-pattern",
-        !patternAlias.test(sEmail) ? "EMAIL: Invalid Value" : null
+        "email-pattern",
+        !utilities.patterns.email.test(sEmail) ? "EMAIL: Invalid Value" : null
       );
     }
   }
@@ -215,17 +214,17 @@
       placeholder="Message to Accompany Invite"
       bind:value={sMessage}
     />
+    <hr />
+    <RolesManager
+      labels={{
+        x: {
+          label: "Permissions in Organization",
+        },
+      }}
+      roles={rolesToManagerList()}
+      on:roleModified={onRolesModification}
+    />
   </FormGroup>
-  <hr />
-  <RolesManager
-    labels={{
-      x: {
-        label: "Permissions in Organization",
-      },
-    }}
-    roles={rolesToManagerList()}
-    on:roleModified={onRolesModification}
-  />
   <hr />
   <Button
     type="submit"

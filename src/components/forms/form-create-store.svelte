@@ -93,8 +93,8 @@
       if (!messages.hasOwnProperty(k)) {
         messages[k] = m;
         modified = true;
-        set = true;
       }
+      set = true;
     }
 
     // Has the Messages Map been Modified?
@@ -128,13 +128,13 @@
       sAlias.length == 0 ? "ALIAS: Missing" : null
     );
     if (!bInvalidAlias) {
-      bInvalidAlias ||= setMessage(
+      bInvalidAlias = setMessage(
         "alias-min",
         sAlias.length < 8 ? "ALIAS: Minimum Length is 8" : null
       );
       bInvalidAlias ||= setMessage(
         "alias-pattern",
-        !patternAlias.test(sAlias) ? "ALIAS: Invalid Value" : null
+        !utilities.patterns.alias.test(sAlias) ? "ALIAS: Invalid Value" : null
       );
     }
   }
@@ -145,7 +145,7 @@
       sTitle.length == 0 ? "TITLE: Missing" : null
     );
     if (!bInvalidTitle) {
-      bInvalidTitle ||= setMessage(
+      bInvalidTitle = setMessage(
         "title-min",
         sTitle.length < 4 ? "TITLE: Minimum Length is 4" : null
       );
@@ -158,7 +158,7 @@
       sPassword.length == 0 ? "PASSWORD: Empty" : null
     );
     if (!bInvalidPassword) {
-      bInvalidPassword ||= setMessage(
+      bInvalidPassword = setMessage(
         "password-empty",
         sPassword.trim().length == 0
           ? "PASSWORD: Contains only whitespaces"
@@ -234,8 +234,8 @@
       type="text"
       name="store-alias"
       placeholder="Store Alias"
-      minlength="8"
-      maxlength="40"
+      minlength={8}
+      maxlength={40}
       on:keydown={onKeyDownNoSpace}
       on:input={onInputAlias}
       value={sAlias}
@@ -249,8 +249,8 @@
       type="text"
       name="store-title"
       placeholder="Store Title"
-      minlength="4"
-      maxlength="80"
+      minlength={4}
+      maxlength={80}
       on:input={onInputTitle}
       value={sTitle}
       required
@@ -264,7 +264,7 @@
       name="user-password"
       class="col"
       placeholder="Your Password"
-      minlength="8"
+      minlength={8}
       on:input={onInputPassword}
       value={sPassword}
       required
