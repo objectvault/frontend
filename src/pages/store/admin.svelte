@@ -12,22 +12,6 @@
   // SVELTE API //
   import { onDestroy } from "svelte";
 
-  // SVELTESTRAP //
-  import {
-    Button,
-    Form,
-    FormGroup,
-    Icon,
-    Input,
-    InputGroup,
-    InputGroupText,
-    Label,
-    Modal,
-    ModalBody,
-    ModalFooter,
-    ModalHeader,
-  } from "sveltestrap";
-
   // STORES //
   import sessionUser from "../../stores/session-user";
   import actionsStore from "../../stores/taskbar-actions";
@@ -35,7 +19,6 @@
 
   // Other Libraries //
   import _ from "lodash";
-  import { validate } from "validate.js";
 
   // WebServices API Library //
   import apiOrg from "../../api/org";
@@ -46,7 +29,7 @@
   // Developer Libraries //
   import EventEmitter from "../../api/event-emitter";
   import type { User } from "../../classes/user";
-  import { Role, Roles } from "../../classes/roles";
+  import type { Roles } from "../../classes/roles";
   import { Store } from "../../classes/store";
   import { StoreUser } from "../../classes/store-user";
   import type { TAction } from "../../objects/actions";
@@ -59,15 +42,15 @@
   import Spinner from "../../components/spinner.svelte";
   import SingleFieldExplorer from "../../components/list-single-field.svelte";
   import TemplateExplorer from "../../components/list-states.svelte";
-  import RolesManager from "../../components/roles-manager.svelte";
   import FormInviteToStore from "../../components/forms/form-invite-to-store.svelte";
+  import FormStoreUserRoles from "../../components/forms/form-store-user-roles.svelte";
   import ModalForm from "../../components/modal-form.svelte";
 
   // Component Paramters //
   export let params: any = {}; // IN: Router - Route Parameters
 
   // COMPONENT Bindable Paramters//
-  let spinner: boolean = false;
+  let spinner: boolean = true;
   let user: User = null; // Session User
   let store: Store = null; // Store Profile
   let storeUser: StoreUser = null; // Registry: Store Session User Registry
@@ -86,9 +69,6 @@
   // User Permissions Modal Form //
   let rolesModifyModalOpen: boolean = false;
   let roleModifyEntry: StoreUser = null;
-  let rolesReadOnly: boolean = false;
-  let rolesToModify: any = null;
-  let updatedRoles: Roles = null;
 
   const toggleRolesModifyModal = () =>
     (rolesModifyModalOpen = !rolesModifyModalOpen);
@@ -144,15 +124,15 @@
     }
   }
 
-  async function onSubmitModifyUserRoles(e: Event) {
-    // Stop Form Submission
-    e.preventDefault();
+  async function onSubmitModifyUserRoles(e: CustomEvent) {
+    const d: any = e.detail;
+    const updatedRoles: Roles = d.updateRoles;
 
     // Entry Roles (SOURCE)
     const me: StoreUser = roleModifyEntry;
     const s: Roles = me.roles();
     console.info(s.export());
-    if (updatedRoles != null) {
+    if (updatedRoles != null && !updatedRoles.isEmpty()) {
       console.info(updatedRoles.export());
       s.merge(updatedRoles);
       console.info(s.export());
@@ -174,19 +154,6 @@
     toggleRolesModifyModal();
   }
 
-  function onUserRolesModification(e: CustomEvent) {
-    const v: number = e.detail.value;
-    const r: Role = new Role(v);
-
-    // Have Updated Roles?
-    if (updatedRoles == null) {
-      // NO: Create Container
-      updatedRoles = new Roles();
-    }
-    updatedRoles.add(r);
-    console.log(e);
-  }
-
   // HELPERS //
   function notify(n: any) {
     if (notifyPopUp) {
@@ -197,102 +164,23 @@
     console.log(n);
   }
 
+  function titleModalStoreUserRoles(ou: StoreUser): string {
+    const ro: boolean = isSelf(ou.user());
+    const username: string = ou.username();
+    const mode: string = ro ? "View" : "Modify";
+    return `${mode} ${username} Roles`;
+  }
+
+  function propsFormStoreUserRoles(ou: StoreUser): any {
+    return {
+      roles: ou.roles(),
+      readOnly: isSelf(ou.user()),
+    };
+  }
+
   function isSelf(id: string): boolean {
     // TODO: Check if ID Given Matches Session User ID
     return user != null && id == user.id();
-  }
-
-  function csvRolesToManagerList(r: Roles): any[] {
-    // STORE LEVEL : ROLES //
-    // apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_CONF   (ALL - STORE CONFIGURATION)
-    // apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER   (RL, D)
-    // apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_ROLES  (RL, U)
-    // apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_INVITE (RL, C, D)
-    // apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_STORE  (R)
-    // apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_OBJECT (ALL)
-
-    // Current Roles
-    const roles: number[] = apiRoles.CSVToRoles(r.export());
-
-    const store_admin_roles: any[] = [
-      {
-        id: "conf",
-        label: "Settings",
-        icon: "gear-fill",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_CONF,
-          roles
-        ),
-      },
-      {
-        id: "user",
-        label: "User",
-        icon: "person",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
-          roles
-        ),
-        fixed: apiRoles.FUNCTION_CREATE,
-      },
-      {
-        id: "roles",
-        label: "Roles",
-        icon: "lock",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_ROLES,
-          roles
-        ),
-        fixed: apiRoles.FUNCTION_CREATE | apiRoles.FUNCTION_DELETE,
-      },
-      {
-        id: "invite",
-        label: "Invites",
-        icon: "envelope",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_INVITE,
-          roles
-        ),
-        fixed: apiRoles.FUNCTION_UPDATE,
-      },
-      {
-        id: "templates",
-        label: "Templates",
-        icon: "file-text",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_TEMPLATE,
-          roles
-        ),
-        fixed: apiRoles.FUNCTION_UPDATE,
-      },
-      {
-        id: "store",
-        label: "Store",
-        icon: "sd-card",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_STORE,
-          roles
-        ),
-        fixed: apiRoles.FUNCTION_CREATE | apiRoles.FUNCTION_DELETE,
-      },
-    ];
-
-    const store_object_roles: any[] = [
-      {
-        id: "object",
-        label: "Object",
-        icon: "sd-card",
-        value: apiRoles.extractRole(
-          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_OBJECT,
-          roles
-        ),
-      },
-    ];
-
-    const roles_list: any = {
-      Administration: store_admin_roles,
-      Object: store_object_roles,
-    };
-    return roles_list;
   }
 
   function entryActionsUsersList(entry: StoreUser): TAction[] {
@@ -311,9 +199,6 @@
         handler: (a: TAction) => {
           console.info(`Clicked [${a.id}] on [${entry.username()}]`);
           roleModifyEntry = entry;
-          rolesToModify = csvRolesToManagerList(entry.roles());
-          updatedRoles = null;
-          rolesReadOnly = self;
           toggleRolesModifyModal();
         },
         label: "Roles",
@@ -641,8 +526,10 @@
       // await reloadUsers(id);
       // await reloadInvitations(id);
 
+      spinner = false;
       return true;
     } catch (e) {
+      setTimeout(() => (spinner = false), 1000);
       notify(e.toString());
       return false;
     }
@@ -686,43 +573,17 @@
   on:formSubmit={onSubmitStoreInvitation}
 />
 
-<Modal
-  isOpen={rolesModifyModalOpen}
-  toggle={toggleRolesModifyModal}
-  name="modalEditUserPermissions"
->
-  <ModalHeader toggle={toggleRolesModifyModal}
-    >{rolesReadOnly ? "Viewing" : "Modifying"}
-    {roleModifyEntry.username()} Roles</ModalHeader
-  >
-  <ModalBody>
-    <Form
-      id="formEditUserPermissions"
-      class="my-2"
-      on:submit={onSubmitModifyUserRoles}
-    >
-      <RolesManager
-        labels={{
-          x: {
-            label: "Permissions in Organization",
-          },
-        }}
-        roles={rolesToModify}
-        readOnly={rolesReadOnly}
-        on:roleModified={onUserRolesModification}
-      />
-      {#if !rolesReadOnly}
-        <hr />
-        <Button type="submit" color="primary" class="w-100">Modify</Button>
-      {/if}
-    </Form>
-  </ModalBody>
-  {#if !rolesReadOnly}
-    <ModalFooter>
-      <div class="text-danger">Message</div>
-    </ModalFooter>
-  {/if}
-</Modal>
+{#if roleModifyEntry}
+  <ModalForm
+    form={FormStoreUserRoles}
+    isOpen={rolesModifyModalOpen}
+    toggle={toggleRolesModifyModal}
+    name="modalStoreUserRoles"
+    title={titleModalStoreUserRoles(roleModifyEntry)}
+    on:formSubmit={onSubmitModifyUserRoles}
+    formProps={propsFormStoreUserRoles(roleModifyEntry)}
+  />
+{/if}
 
 <main class="container">
   {#if spinner}
@@ -731,7 +592,7 @@
     </Overlay>
   {/if}
 
-  {#if store}
+  {#if store && storeUser}
     <div class="row mb-3">
       <div class="card p-0">
         <h3 class="card-header d-flex">
@@ -776,11 +637,19 @@
       </div>
     </div>
     <div class="row d-flex flex-column flex-sm-row mb-3">
-      <SingleFieldExplorer list={sflUsersList} class="col-12 col-sm-6 p-0" />
-      <SingleFieldExplorer
-        list={sflInvitationsList}
-        class="col-12 col-sm-6 p-0"
-      />
+      {#if storeUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER, apiRoles.FUNCTION_LIST)}
+        <SingleFieldExplorer list={sflUsersList} class="col-12 col-sm-6 p-0" />
+      {/if}
+      {#if storeUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_INVITE, apiRoles.FUNCTION_LIST)}
+        <SingleFieldExplorer
+          list={sflInvitationsList}
+          class="col-12 col-sm-6 p-0"
+        />
+      {/if}
     </div>
     {#if sflTemplatesList && storeUser
         .roles()
@@ -789,7 +658,5 @@
         <TemplateExplorer list={sflTemplatesList} class="px-0" />
       </div>
     {/if}
-  {:else}
-    <h1>Loading</h1>
   {/if}
 </main>

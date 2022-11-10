@@ -140,10 +140,11 @@
           : null
       );
 
-      bInvalidPassword ||= setMessage(
-        "password-min",
-        sPassword.length < 8 ? "PASSWORD: Minimum Length is 8" : null
-      );
+      bInvalidPassword =
+        setMessage(
+          "password-min",
+          sPassword.length < 8 ? "PASSWORD: Minimum Length is 8" : null
+        ) || bInvalidPassword;
     }
   }
 
@@ -157,10 +158,11 @@
         "email-min",
         sEmail.length < 6 ? "EMAIL: Minimum Length is 6" : null
       );
-      bInvalidEmail ||= setMessage(
-        "email-pattern",
-        !utilities.patterns.email.test(sEmail) ? "EMAIL: Invalid Value" : null
-      );
+      bInvalidEmail =
+        setMessage(
+          "email-pattern",
+          !utilities.patterns.email.test(sEmail) ? "EMAIL: Invalid Value" : null
+        ) || bInvalidEmail;
     }
   }
 
