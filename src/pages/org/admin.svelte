@@ -143,7 +143,7 @@
     const me: OrganizationUser = roleModifyEntry;
     const s: Roles = me.roles();
     console.info(s.export());
-    if (updatedRoles != null) {
+    if (updatedRoles != null && !updatedRoles.isEmpty()) {
       console.info(updatedRoles.export());
       s.merge(updatedRoles);
       console.info(s.export());
@@ -759,7 +759,7 @@
     </Overlay>
   {/if}
 
-  {#if user && organization}
+  {#if organization && organizationUser}
     <div class="row mb-3">
       <div class="card p-0">
         <h3 class="card-header d-flex">
@@ -803,146 +803,43 @@
         </div>
       </div>
     </div>
-    {#if organizationUser}
-      <div class="row d-flex flex-column flex-sm-row mb-3">
-        {#if organizationUser
-          .roles()
-          .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER, apiRoles.FUNCTION_LIST)}
-          <SingleFieldExplorer
-            list={sflUsersList}
-            class="col-12 col-sm-6 p-0"
-          />
-        {/if}
-        {#if organizationUser
-          .roles()
-          .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE, apiRoles.FUNCTION_LIST)}
-          <SingleFieldExplorer
-            list={sflInvitationsList}
-            class="col-12 col-sm-6 p-0"
-          />
-        {/if}
-      </div>
-      {#if sflTemplatesList && organizationUser
-          .roles()
-          .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE, apiRoles.FUNCTION_LIST)}
-        <div class="row mb-3">
-          <TemplateExplorer list={sflTemplatesList} class="px-0" />
-        </div>
+    <div class="row d-flex flex-column flex-sm-row mb-3">
+      {#if organizationUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER, apiRoles.FUNCTION_LIST)}
+        <SingleFieldExplorer list={sflUsersList} class="col-12 col-sm-6 p-0" />
       {/if}
-      {#if !organization.isSystem()}
-        {#if listOfStores != null}
-          <div name="list-of-stores" class="row card">
-            <h3 class="card-header d-flex">
-              <div class="col text-center">Stores</div>
-              {#if organizationUser
-                .roles()
-                .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_CREATE)}
-                <div name="actions" class="col-auto">
-                  <Button color="primary" on:click={toggleStoreModal}>
-                    <Icon name="plus-square" />
-                    <span class="d-none d-md-inline">New Store</span>
-                  </Button>
-                </div>
-              {/if}
-            </h3>
-            <div class="card-header">
-              <div class="d-flex flex-column pt-2">
-                <div class="d-flex">
-                  <div class="input-group">
-                    <button
-                      type="button"
-                      class="btn btn-primary dropdown-toggle"
-                      id="dropdown"
-                      data-bs-toggle="dropdown"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                    >
-                      <span class="align-text-bottom d-none d-sm-inline"
-                        >Size:</span
-                      >
-                      <span class="align-text-bottom">10</span>
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="pageSize">
-                      <a href="#" class="dropdown-item active">5</a>
-                      <a href="#" class="dropdown-item">10</a>
-                      <a href="#" class="dropdown-item">100</a>
-                      <a href="#" class="dropdown-item">All</a>
-                    </div>
-                    <input
-                      type="text"
-                      class="form-control"
-                      placeholder="Search text here"
-                      aria-label="Text input with dropdown"
-                    />
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      id="buttonAfter"
-                    >
-                      <i class="bi-search" style="font-size: 1rem;" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <ul class="list-group list-group-flush">
-              {#if hasPageUp(listOfStores)}
-                <li class="list-group-item">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-no-outline w-100"
-                  >
-                    <i class="bi-arrow-bar-up text-primary" />
-                  </button>
-                </li>
-              {/if}
-              {#each stores as store}
-                <li class="list-group-item d-flex">
-                  <div class="col">
-                    <i class="bi-sd-card-fill" />
-                    <a
-                      href="#/store/{store.store}"
-                      class="link-secondary text-decoration-none"
-                      >{store.alias}</a
-                    >
-                  </div>
-                  <div class="col-auto">
-                    <button
-                      name="deleteStore"
-                      type="button"
-                      class="btn btn-outline-danger btn-no-outline px-1"
-                    >
-                      <i class="bi-dash-circle" />
-                    </button>
-                  </div>
-                </li>
-              {/each}
-              {#if hasPageDown(listOfStores)}
-                <li class="list-group-item">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-no-outline w-100"
-                  >
-                    <i
-                      class="bi-arrow-bar-down text-primary"
-                      style="font-size: 1rem;"
-                    />
-                  </button>
-                </li>
-              {/if}
-            </ul>
-          </div>
-        {/if}
-      {:else}
-        <div class="row card mb-3">
+      {#if organizationUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE, apiRoles.FUNCTION_LIST)}
+        <SingleFieldExplorer
+          list={sflInvitationsList}
+          class="col-12 col-sm-6 p-0"
+        />
+      {/if}
+    </div>
+    {#if sflTemplatesList && organizationUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE, apiRoles.FUNCTION_LIST)}
+      <div class="row mb-3">
+        <TemplateExplorer list={sflTemplatesList} class="px-0" />
+      </div>
+    {/if}
+    {#if !organization.isSystem()}
+      {#if listOfStores != null}
+        <div name="list-of-stores" class="row card">
           <h3 class="card-header d-flex">
-            <div class="col text-center">All Organizations</div>
-            <div name="actions" class="col-auto">
-              <Button color="primary" on:click={toggleOrgModal}>
-                <i class="bi-plus-square" />
-                <span class="d-none d-md-inline">Organization</span>
-              </Button>
-            </div>
+            <div class="col text-center">Stores</div>
+            {#if organizationUser
+              .roles()
+              .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_CREATE)}
+              <div name="actions" class="col-auto">
+                <Button color="primary" on:click={toggleStoreModal}>
+                  <Icon name="plus-square" />
+                  <span class="d-none d-md-inline">New Store</span>
+                </Button>
+              </div>
+            {/if}
           </h3>
           <div class="card-header">
             <div class="d-flex flex-column pt-2">
@@ -985,7 +882,7 @@
             </div>
           </div>
           <ul class="list-group list-group-flush">
-            {#if hasPageUp(listAllOrgs)}
+            {#if hasPageUp(listOfStores)}
               <li class="list-group-item">
                 <button
                   type="button"
@@ -995,98 +892,14 @@
                 </button>
               </li>
             {/if}
-            {#each allOrgs as org}
-              <li class="list-group-item d-flex">
-                <div class="col">
-                  <i class="bi-building" />
-                  {org.alias}
-                </div>
-                <div class="col-auto">
-                  <button
-                    name="deleteStore"
-                    type="button"
-                    class="btn btn-outline-danger btn-no-outline px-1"
-                  >
-                    <i class="bi-dash-circle" />
-                  </button>
-                </div>
-              </li>
-            {/each}
-            {#if hasPageDown(listAllOrgs)}
-              <li class="list-group-item">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-no-outline w-100"
-                >
-                  <i
-                    class="bi-arrow-bar-down text-primary"
-                    style="font-size: 1rem;"
-                  />
-                </button>
-              </li>
-            {/if}
-          </ul>
-        </div>
-        <div class="row card">
-          <h3 class="card-header d-flex">
-            <div class="col text-center">All Users</div>
-          </h3>
-          <div class="card-header">
-            <div class="d-flex flex-column pt-2">
-              <div class="d-flex">
-                <div class="input-group">
-                  <button
-                    type="button"
-                    class="btn btn-primary dropdown-toggle"
-                    id="dropdown"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <span class="align-text-bottom d-none d-sm-inline"
-                      >Size:</span
-                    >
-                    <span class="align-text-bottom">10</span>
-                  </button>
-                  <div class="dropdown-menu" aria-labelledby="pageSize">
-                    <a href="#" class="dropdown-item active">5</a>
-                    <a href="#" class="dropdown-item">10</a>
-                    <a href="#" class="dropdown-item">100</a>
-                    <a href="#" class="dropdown-item">All</a>
-                  </div>
-                  <input
-                    type="text"
-                    class="form-control"
-                    placeholder="Search text here"
-                    aria-label="Text input with dropdown"
-                  />
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    id="buttonAfter"
-                  >
-                    <i class="bi-search" style="font-size: 1rem;" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <ul class="list-group list-group-flush">
-            {#if hasPageUp(listAllUsers)}
-              <li class="list-group-item">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-no-outline w-100"
-                >
-                  <i class="bi-arrow-bar-up text-primary" />
-                </button>
-              </li>
-            {/if}
-            {#each allUsers as user}
+            {#each stores as store}
               <li class="list-group-item d-flex">
                 <div class="col">
                   <i class="bi-sd-card-fill" />
-                  {user.alias}
+                  <a
+                    href="#/store/{store.store}"
+                    class="link-secondary text-decoration-none">{store.alias}</a
+                  >
                 </div>
                 <div class="col-auto">
                   <button
@@ -1099,7 +912,7 @@
                 </div>
               </li>
             {/each}
-            {#if hasPageDown(listAllUsers)}
+            {#if hasPageDown(listOfStores)}
               <li class="list-group-item">
                 <button
                   type="button"
@@ -1115,6 +928,177 @@
           </ul>
         </div>
       {/if}
+    {:else}
+      <div class="row card mb-3">
+        <h3 class="card-header d-flex">
+          <div class="col text-center">All Organizations</div>
+          <div name="actions" class="col-auto">
+            <Button color="primary" on:click={toggleOrgModal}>
+              <i class="bi-plus-square" />
+              <span class="d-none d-md-inline">Organization</span>
+            </Button>
+          </div>
+        </h3>
+        <div class="card-header">
+          <div class="d-flex flex-column pt-2">
+            <div class="d-flex">
+              <div class="input-group">
+                <button
+                  type="button"
+                  class="btn btn-primary dropdown-toggle"
+                  id="dropdown"
+                  data-bs-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="align-text-bottom d-none d-sm-inline">Size:</span
+                  >
+                  <span class="align-text-bottom">10</span>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="pageSize">
+                  <a href="#" class="dropdown-item active">5</a>
+                  <a href="#" class="dropdown-item">10</a>
+                  <a href="#" class="dropdown-item">100</a>
+                  <a href="#" class="dropdown-item">All</a>
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Search text here"
+                  aria-label="Text input with dropdown"
+                />
+                <button type="button" class="btn btn-primary" id="buttonAfter">
+                  <i class="bi-search" style="font-size: 1rem;" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="list-group list-group-flush">
+          {#if hasPageUp(listAllOrgs)}
+            <li class="list-group-item">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-no-outline w-100"
+              >
+                <i class="bi-arrow-bar-up text-primary" />
+              </button>
+            </li>
+          {/if}
+          {#each allOrgs as org}
+            <li class="list-group-item d-flex">
+              <div class="col">
+                <i class="bi-building" />
+                {org.alias}
+              </div>
+              <div class="col-auto">
+                <button
+                  name="deleteStore"
+                  type="button"
+                  class="btn btn-outline-danger btn-no-outline px-1"
+                >
+                  <i class="bi-dash-circle" />
+                </button>
+              </div>
+            </li>
+          {/each}
+          {#if hasPageDown(listAllOrgs)}
+            <li class="list-group-item">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-no-outline w-100"
+              >
+                <i
+                  class="bi-arrow-bar-down text-primary"
+                  style="font-size: 1rem;"
+                />
+              </button>
+            </li>
+          {/if}
+        </ul>
+      </div>
+      <div class="row card">
+        <h3 class="card-header d-flex">
+          <div class="col text-center">All Users</div>
+        </h3>
+        <div class="card-header">
+          <div class="d-flex flex-column pt-2">
+            <div class="d-flex">
+              <div class="input-group">
+                <button
+                  type="button"
+                  class="btn btn-primary dropdown-toggle"
+                  id="dropdown"
+                  data-bs-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="align-text-bottom d-none d-sm-inline">Size:</span
+                  >
+                  <span class="align-text-bottom">10</span>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="pageSize">
+                  <a href="#" class="dropdown-item active">5</a>
+                  <a href="#" class="dropdown-item">10</a>
+                  <a href="#" class="dropdown-item">100</a>
+                  <a href="#" class="dropdown-item">All</a>
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Search text here"
+                  aria-label="Text input with dropdown"
+                />
+                <button type="button" class="btn btn-primary" id="buttonAfter">
+                  <i class="bi-search" style="font-size: 1rem;" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="list-group list-group-flush">
+          {#if hasPageUp(listAllUsers)}
+            <li class="list-group-item">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-no-outline w-100"
+              >
+                <i class="bi-arrow-bar-up text-primary" />
+              </button>
+            </li>
+          {/if}
+          {#each allUsers as user}
+            <li class="list-group-item d-flex">
+              <div class="col">
+                <i class="bi-sd-card-fill" />
+                {user.alias}
+              </div>
+              <div class="col-auto">
+                <button
+                  name="deleteStore"
+                  type="button"
+                  class="btn btn-outline-danger btn-no-outline px-1"
+                >
+                  <i class="bi-dash-circle" />
+                </button>
+              </div>
+            </li>
+          {/each}
+          {#if hasPageDown(listAllUsers)}
+            <li class="list-group-item">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-no-outline w-100"
+              >
+                <i
+                  class="bi-arrow-bar-down text-primary"
+                  style="font-size: 1rem;"
+                />
+              </button>
+            </li>
+          {/if}
+        </ul>
+      </div>
     {/if}
   {/if}
 </main>
