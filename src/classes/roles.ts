@@ -8,6 +8,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/* START.CHECKS */
+import du from "../dev-utils";
+/* END.CHECKS */
+
 // Application LIBRARIES //
 import apiRoles from "../api/roles";
 
@@ -169,14 +173,19 @@ export class Roles {
   }
 
   public import(csv: string): Roles {
+    /* START.CHECKS */
+    (csv == null || typeof csv !== 'string') && du.throwMessage('"csv" is supposed to be a string.');
+    /* END.CHECKS */
+
     // Is Non Empty String?
     csv = csv.trim();
-    if (csv.length == 0) { // NO: Ignore Changes
+    if (csv.length == 0) { // NO: Return Existing
       return this;
     }
 
-    // Convert CSV to Roles
+    // Convert CSV to Roles and Merge
     this._roles = this._import(csv);
+    return this;
   }
 
   public export(): string {

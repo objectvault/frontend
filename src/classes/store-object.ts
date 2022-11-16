@@ -34,7 +34,7 @@ export class StoreObject {
 
   constructor(o?: any) {
     /* START.CHECKS */
-    o != null && typeof o !== 'object' && du.throwMessage('Passed Invalid Object Value to constructor.');
+    (o != null || typeof o !== 'object') && du.throwMessage('Passed Invalid Object Value to constructor.');
     /* END.CHECKS */
 
     if (o) {
