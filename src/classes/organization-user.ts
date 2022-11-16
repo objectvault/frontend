@@ -20,7 +20,7 @@ export class OrganizationUser {
   private _organization: string = null;
   private _user: string = null;
   private _username: string = null;
-  private _roles: Roles = new Roles();
+  private _roles: Roles = null;
   private _state: number = 0;
 
   constructor(o?: any) {
@@ -63,7 +63,7 @@ export class OrganizationUser {
     const o: OrganizationUser = new OrganizationUser();
     o._organization = this._organization;
     o._user = this._user;
-    o._roles = this._roles.clone();
+    o._roles = this._roles ? this._roles.clone() : null;
     o._state = this._state;
     return o;
   }
@@ -111,7 +111,9 @@ export class OrganizationUser {
     this._state = this._extractNumber(o, 'state', 0);
 
     const csv: string = this._extractString(o, 'roles', null);
-    this._roles.reset().import(csv);
+    if (csv != null) {
+      this._roles = new Roles(csv);
+    }
   }
 
   private _extract(o: any, pname: string, d: any): any {

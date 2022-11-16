@@ -154,6 +154,7 @@
           apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
           roles
         ),
+        fixed: apiRoles.FUNCTION_CREATE | apiRoles.FUNCTION_DELETE,
       },
       {
         id: "invite",
