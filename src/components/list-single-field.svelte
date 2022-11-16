@@ -189,6 +189,7 @@
     );
 
     if (h !== null) {
+      // Add Refresh Callback
       a.__reloadList = reloadList;
       h(a);
     }
@@ -200,6 +201,8 @@
     );
 
     if (h !== null) {
+      // Add Refresh Callback
+      a.__reloadList = reloadList;
       h(a, entry);
     }
   }
