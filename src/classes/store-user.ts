@@ -47,10 +47,6 @@ export class StoreUser {
     return e;
   }
 
-  public isAdmin(): boolean {
-    return this.isValid() && ObjectState.hasState(this._state, ObjectState.STATE_SYSTEM);
-  }
-
   public reset(): StoreUser {
     this._store = null;
     this._user = null;

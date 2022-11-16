@@ -8,6 +8,11 @@
    * You should have received a copy of the GNU Affero General Public License
    * along with this program.  If not, see <https://www.gnu.org/licenses/>.
    */
+
+  // TODO: Instead of having an input field for the email to invite, have a list of user in the organization
+
+  // NOTE: User to invite to the store, have to be members of the organization the store belongs to
+
   // SVELTE //
   import { onMount } from "svelte";
 

@@ -189,16 +189,15 @@
      * IS Not Self : Depends on Permissions
      */
     const self: boolean = isSelf(entry.user());
-    const isAdmin: boolean = entry.isAdmin();
 
     return [
       {
         id: "user.permissions",
         icon: "unlock-fill",
         color: "primary",
-        handler: (a: TAction) => {
-          console.info(`Clicked [${a.id}] on [${entry.username()}]`);
-          roleModifyEntry = entry;
+        handler: (a: TAction, e: StoreUser) => {
+          console.info(`Clicked [${a.id}] on [${e.username()}]`);
+          roleModifyEntry = e;
           toggleRolesModifyModal();
         },
         label: "Roles",
@@ -208,21 +207,29 @@
         id: "user.delete",
         icon: "trash",
         color: "danger",
-        handler: (a: TAction) =>
-          console.info(`Clicked [${a.id}] on [${entry.username()}]`),
+        handler: async (a: TAction, e: StoreUser) => {
+          try {
+            // Delete USer
+            console.info(`Clicked [${a.id}] on [${e.username()}]`);
+            const i: any = await apiStore.users.delete(e.store(), e.user());
+
+            // User List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(
+              `User [${e.username()}] DELETED from Store [${store.name()}]`
+            );
+          } catch (e) {
+            console.error(e);
+            notify(e.toString());
+          }
+        },
         display: () => !self,
         label: "Delete",
         tooltip: "Remove User from Store",
-      },
-      {
-        id: "admin.toggle",
-        icon: isAdmin ? "star-fill" : "star",
-        color: isAdmin ? "warning" : "danger",
-        handler: (a: TAction) =>
-          console.info(`Clicked [${a.id}] on [${entry.username()}]`),
-        disabled: () => self,
-        label: "Admin",
-        tooltip: isAdmin ? "Remove Admin Status" : "Make Admin",
       },
     ];
   }
@@ -269,11 +276,27 @@
   function entryActionsInvitationsList(entry: any): TAction[] {
     return [
       {
+        id: "invite.resend",
+        icon: "arrow-clockwise",
+        color: "info",
+        handler: async (a: TAction, entry: any) => {
+          console.info(`Clicked [${a.id}] on [${entry.invitee}]`);
+          try {
+            const i: any = await apiStore.invites.resend(entry.id);
+            console.log(i);
+          } catch (e) {
+            console.error(e);
+          }
+        },
+        label: "Resend",
+        tooltip: "Resend Invitation",
+      },
+      {
         id: "invite.delete",
         icon: "dash-circle",
         color: "danger",
-        handler: (a: TAction, entry: any) =>
-          console.info(`Clicked [${a.id}] on [${entry.username}]`),
+        handler: async (a: TAction, entry: any) =>
+          console.info(`Clicked [${a.id}] on [${entry.id}]`),
         label: "Delete",
         tooltip: "Delete Invitation",
       },

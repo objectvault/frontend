@@ -82,6 +82,38 @@ async function getUser(store: string, user: string): Promise<any> {
   }
 }
 
+async function deleteUser(store: string, user: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/store/${store}/user/${user}`;
+
+    // Request
+    const response: any = await ws_client().delete(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return _.get(response, "data.data", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
 async function getUserRoles(org: string, user: string): Promise<string> {
   try {
     let options: any = {
@@ -154,5 +186,6 @@ const roles: any = {
 export default {
   list: getUsers,
   get: getUser,
+  delete: deleteUser,
   roles
 }
