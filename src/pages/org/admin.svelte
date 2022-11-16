@@ -238,7 +238,14 @@
   function propsFormOrgUserRoles(ou: OrganizationUser): any {
     return {
       roles: ou.roles(),
-      readOnly: isSelf(ou.user()),
+      readOnly:
+        isSelf(ou.user()) ||
+        !organizationUser
+          .roles()
+          .hasRole(
+            apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
+            apiRoles.FUNCTION_UPDATE
+          ),
       isSystemOrg: organization.isSystem(),
       isSystemUser: ou.isAdmin(),
     };
@@ -272,7 +279,7 @@
     return false;
   }
 
-  function entryActionsUsersList(entry: any): TAction[] {
+  function entryActionsUsersList(entry: OrganizationUser): TAction[] {
     /* CONDITIONS:
      * IS SELF : Read Only (Can't Edit)
      * IS Not Self : Depends on Permissions
@@ -289,6 +296,18 @@
           console.info(`Clicked [${a.id}] on [${entry.username()}]`);
           roleModifyEntry = entry;
           toggleRolesModifyModal();
+        },
+        display: () => {
+          return (
+            entry.roles() != null &&
+            (self ||
+              organizationUser
+                .roles()
+                .hasRole(
+                  apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
+                  apiRoles.FUNCTION_READ
+                ))
+          );
         },
         label: "Roles",
         tooltip: self ? "View My Permissions" : "Modify User Permissions",
