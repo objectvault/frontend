@@ -148,26 +148,6 @@
     return false;
   }
 
-  async function onLogout(e?: PointerEvent) {
-    if (e != null) {
-      // Stop Further Processing
-      e.preventDefault();
-    }
-
-    try {
-      await apiSession.logout();
-      sessionUser.setUser(null);
-      push("/");
-    } catch (e) {
-      // handle error
-      notify(e.toString());
-      console.log(e);
-
-      // Apply Error Meesage to Login Dialog
-      arMessagesLoginForm = ["Logout Failed"];
-    }
-  }
-
   async function onChangePassword(e: CustomEvent) {
     const d: any = e.detail;
     console.log(`CURRENT [${d.current}] - NEW [${d.new}]`);
