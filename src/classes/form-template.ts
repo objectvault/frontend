@@ -14,7 +14,6 @@ import du from "../dev-utils";
 
 // Other Libraries //
 import _ from "lodash";
-import { TemplateObjectAdaptor } from './template-object-adapter';
 
 export class FieldTemplate {
   private _name: string = null;

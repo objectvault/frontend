@@ -81,12 +81,6 @@
     return i == 0 ? "" : "ms-1";
   }
 
-  function classesEntryActionButton(i: number, a: TAction): string {
-    const c: string = __actions.actionColor(a, "primary");
-    const cl: string = `btn btn-outline-${c} btn-no-outline`;
-    return i === 0 ? cl : cl + " ps-1";
-  }
-
   async function reloadEntries(): Promise<any> {
     try {
       // Reload Entries
@@ -184,15 +178,15 @@
     // Stop Default Processing
     e.preventDefault();
 
-    const h: CBActionHandler = __actions.actionHandler(a, () =>
-      console.info(`NO HANDLER: Clicked [${a.id}]`)
+    const h: CBActionHandler = __actions.actionHandler(a, (a: TAction) =>
+      console.error(`NO HANDLER: Clicked [${a.id}]`)
     );
 
-    if (h !== null) {
-      // Add Refresh Callback
-      a.__reloadList = reloadList;
-      h(a);
-    }
+    // Add Refresh Callback
+    a.__reloadList = reloadList;
+
+    // Call back
+    h(a);
   }
 
   function onEntryAction(e: Event, a: TAction, entry: any) {
