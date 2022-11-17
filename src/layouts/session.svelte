@@ -10,7 +10,7 @@
    */
 
   // SVELTE //
-  import { onMount, onDestroy, tick } from "svelte";
+  import { onMount, onDestroy } from "svelte";
 
   // SVELTESTRAP //
   import {
