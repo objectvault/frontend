@@ -21,9 +21,6 @@
     CardHeader,
     CardTitle,
     Icon,
-    Modal,
-    ModalBody,
-    ModalFooter,
     Offcanvas,
   } from "sveltestrap";
 
@@ -47,11 +44,12 @@
   // EVENT EMITTER //
   import EventEmitter from "../api/event-emitter";
 
-  // TOASTER //
+  // CUSTOM Components //
   import Toaster from "../components/toaster/toaster.svelte";
   import type { TNotify } from "../components/toaster/store";
   import toasterStore from "../components/toaster/store";
   import FormChangePassword from "../components/forms/form-change-password.svelte";
+  import ModalMessage from "../components/modal-message.svelte";
 
   // Component Variables //
   const title: string = "";
@@ -82,6 +80,47 @@
     toasterStore.push(n);
   }
 
+  function actionsLogoutModal(): TAction[] {
+    // Action List for Logout Confirmation Modal
+    return [
+      {
+        id: "__close",
+        label: "No",
+        color: "success",
+        display: () => false,
+        handler: (a: TAction) => {
+          console.info(`Clicked [${a.id}]`);
+          bDisplayLogoutModal = false;
+        },
+        tooltip: "Cancel Logout",
+      },
+      {
+        id: "__default",
+        label: "YES",
+        color: "danger",
+        classes: {
+          container: "col-4",
+        },
+        handler: async (a: TAction) => {
+          try {
+            console.info(`Clicked [${a.id}]`);
+            await apiSession.logout();
+            sessionUser.setUser(null);
+            push("/");
+          } catch (e) {
+            // handle error
+            notify(e.toString());
+            console.log(e);
+
+            // Apply Error Meesage to Login Dialog
+            arMessagesLoginForm = ["Logout Failed"];
+          }
+        },
+        tooltip: "Terminate Session",
+      },
+    ];
+  }
+
   // EVENT Handlers //
   function onProcessAction(id: string, e: any) {
     console.log(`Process Action [${id}]`);
@@ -93,7 +132,7 @@
     console.error(`Action [${id}] does not exist or is invalid`);
   }
 
-  function onShowLogoutModal(e: PointerEvent, bHideOffcanvas = false): boolean {
+  function onShowLogoutModal(e: MouseEvent, bHideOffcanvas = false): boolean {
     if (bHideOffcanvas) {
       bOpenOffcanvas = false;
     }
@@ -107,12 +146,6 @@
     bOpenOffcanvas = true;
     console.log("Show Offcanvas");
     return false;
-  }
-
-  function onToggleLogoutModal(e: PointerEvent) {
-    // Stop Further Processing
-    e.preventDefault();
-    bDisplayLogoutModal = !bDisplayLogoutModal;
   }
 
   async function onLogout(e?: PointerEvent) {
@@ -146,7 +179,9 @@
         d.reset();
 
         // Close Session
-        await onLogout();
+        await apiSession.logout();
+        sessionUser.setUser(null);
+        push("/");
       } else {
         sMessageChangePWD = m.message ? m.message : "Application Error";
       }
@@ -207,38 +242,14 @@
   <title>{title}</title>
 </svelte:head>
 
-<Modal
+<ModalMessage
   isOpen={bDisplayLogoutModal}
-  toggle={onToggleLogoutModal}
+  title="Exit Session"
+  message="Do you realy want to leave?"
+  actions={actionsLogoutModal()}
+  messages={arMessagesLoginForm}
   centered={true}
-  header="Exit Session"
->
-  <ModalBody>
-    <div class="d-flex flex-column mx-auto" style="width: 80%;">
-      <div class="row mb-3">
-        <h4 class="col">Do you realy want to leave?</h4>
-      </div>
-      <div class="row d-flex justify-content-between">
-        <Button
-          type="submit"
-          color="success"
-          class="col-4"
-          on:click={onToggleLogoutModal}
-        >
-          NO
-        </Button>
-        <Button type="submit" color="danger" class="col-4" on:click={onLogout}>
-          YES
-        </Button>
-      </div>
-    </div>
-  </ModalBody>
-  <ModalFooter class={arMessagesLoginForm.length ? "flex-column" : "d-none"}>
-    {#each arMessagesLoginForm as message}
-      <div class="col-12 text-danger">{message}</div>
-    {/each}
-  </ModalFooter>
-</Modal>
+/>
 
 <header class="site-header sticky-top pb-1">
   <nav class="d-flex flex-row justify-content-between py-1 bg-dark">
