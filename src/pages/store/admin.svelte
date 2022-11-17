@@ -45,6 +45,7 @@
   import FormInviteToStore from "../../components/forms/form-invite-to-store.svelte";
   import FormStoreUserRoles from "../../components/forms/form-store-user-roles.svelte";
   import ModalForm from "../../components/modal-form.svelte";
+  import ModalMessage from "../../components/modal-message.svelte";
 
   // Component Paramters //
   export let params: any = {}; // IN: Router - Route Parameters
@@ -56,6 +57,10 @@
   let storeUser: StoreUser = null; // Registry: Store Session User Registry
   let listOfInvitations: any = null; // List of Pending User Invitations
   let invitations: any[] = []; // Invitations Array
+
+  // Message Modal //
+  let oModalMessage: any = null;
+  let arModalMessages: string[] = [];
 
   // Invitation Modal Form //
   let inviteOpen: boolean = false;
@@ -183,6 +188,58 @@
     return user != null && id == user.id();
   }
 
+  function actionsMessageModal(type: string) {
+    switch (type) {
+      case "remove-user":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel Removal",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "danger",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Remove User
+                const action: TAction = oModalMessage.params.action;
+                const e: StoreUser = oModalMessage.params.entry;
+                console.info(`Clicked [${action.id}] on [${e.username()}]`);
+                await apiStore.users.delete(e.store(), e.user());
+
+                // User List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(
+                  `User [${e.username()}] DELETED from Store [${store.name()}]`
+                );
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Remove User",
+          },
+        ];
+    }
+  }
   function entryActionsUsersList(entry: StoreUser): TAction[] {
     /* CONDITIONS:
      * IS SELF : Read Only (Can't Edit)
@@ -208,24 +265,15 @@
         icon: "trash",
         color: "danger",
         handler: async (a: TAction, e: StoreUser) => {
-          try {
-            // Delete USer
-            console.info(`Clicked [${a.id}] on [${e.username()}]`);
-            const i: any = await apiStore.users.delete(e.store(), e.user());
-
-            // User List Refresh?
-            const refresh: any = _.get(a, "__reloadList", null);
-            if (refresh && _.isFunction(refresh)) {
-              await refresh();
-            }
-
-            console.log(
-              `User [${e.username()}] DELETED from Store [${store.name()}]`
-            );
-          } catch (e) {
-            console.error(e);
-            notify(e.toString());
-          }
+          oModalMessage = {
+            title: "Remove User",
+            message: `Remove user [${e.username()}] from Store?`,
+            type: "remove-user",
+            params: {
+              action: a,
+              entry: e,
+            },
+          };
         },
         display: () => !self,
         label: "Delete",
@@ -586,6 +634,17 @@
 <svelte:head>
   <title>ObjectVault - Store Administration [{params.store}]</title>
 </svelte:head>
+
+{#if oModalMessage !== null}
+  <ModalMessage
+    isOpen={true}
+    title={oModalMessage.title}
+    message={oModalMessage.message}
+    actions={actionsMessageModal(oModalMessage.type)}
+    messages={arModalMessages}
+    centered={true}
+  />
+{/if}
 
 <ModalForm
   form={FormInviteToStore}
