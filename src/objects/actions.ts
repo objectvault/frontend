@@ -7,6 +7,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+/* START.CHECKS */
+import du from "../dev-utils";
+/* END.CHECKS */
 
 // Libraries //
 import _ from "lodash";
@@ -15,69 +18,89 @@ import _ from "lodash";
 export type CBActionHandler = (action: TAction, o?: any) => void;
 export type CBActionState = (action: TAction, o?: any) => boolean;
 
+// Classes Categories for an Action
+export type TActionClasses = {
+  container?: string;
+  icon?: string;
+  label?: string;
+  [key: string]: any;
+}
+
 // Definition for an Action
 export type TAction = {
   id: string;
-  icon: string;
+  icon?: string;
+  label?: string;
+  color?: string;
+  tooltip?: string;
+  classes?: TActionClasses;
   handler: CBActionHandler;
   display?: CBActionState;
   disabled?: CBActionState;
-  color?: string;
-  label?: string;
-  tooltip?: string;
   [key: string]: any;
 }
 
 // Lodash Extension
-function getStringOrNull(o: any, path: string, d?: string) {
+function getStringDefaultOrNull(o: any, path: string, d?: string): string | null {
   const p: any = _.get(o, path);
   if (_.isString(p)) {
     return p;
   }
 
-  return _.isString(d) ? d : null;
+  /* START.CHECKS */
+  ((d != null) && !_.isString(d)) && du.throwMessage('Invalid Value for Default');
+  /* END.CHECKS */
+
+  return d != null ? d : null;
 }
 
-function getHandlerOrNull(o: any, path: string, d?: string) {
+function getHandlerOrNull(o: any, path: string, d?: string): any | null {
   const p: any = _.get(o, path);
   if (_.isFunction(p)) {
     return p;
   }
 
-  return _.isFunction(d) ? d : null;
+  /* START.CHECKS */
+  ((d != null) && !_.isFunction(d)) && du.throwMessage('Invalid Value for Default');
+  /* END.CHECKS */
+
+  return d;
 }
 
 // Helpers
-function getActionLabel(action: TAction, d?: string): string {
-  const i: string = getStringOrNull(action, "label", d);
-  return i != null ? i : null;
+function getActionLabel(action: TAction, d?: string): string | null {
+  return getStringDefaultOrNull(action, "label", d);
 }
 
-function getActionTooltip(action: TAction, d?: string): string {
-  const i: string = getStringOrNull(action, "tooltip", d);
-  return i != null ? i : null;
+function getActionTooltip(action: TAction, d?: string): string | null {
+  return getStringDefaultOrNull(action, "tooltip", d);
 }
 
-function getActionIcon(action: TAction, d?: string): string {
-  const i: string = getStringOrNull(action, "icon", d);
-  return i != null ? i : null;
+function getActionIcon(action: TAction, d?: string): string | null {
+  return getStringDefaultOrNull(action, "icon", d);
 }
 
-function getBootstrapIcon(action: TAction, d?: string): string {
-  const i: string = getActionIcon(action, d);
-  return i != null ? `bi-${i}` : null;
+function getBootstrapIcon(action: TAction, d?: string): string | null {
+  const i: string | null = getActionIcon(action, d);
+  return i !== null ? `bi-${i}` : null;
 }
 
 function getActionColor(action: TAction, d?: string): string {
-  return getStringOrNull(action, "color", d);
+  return getStringDefaultOrNull(action, "color", d);
 }
 
-function getActionHandler(action: TAction, d?: any): CBActionHandler {
+function getActionClasses(action: TAction, category: string, d?: string): string | null {
+  const c: any | null = _.get(action, "classes", null);
+  return c !== null ? getStringDefaultOrNull(c, category, d) : null;
+}
+
+function getActionHandler(action: TAction, d?: any): CBActionHandler | null {
   return getHandlerOrNull(action, "handler", d);
 }
 
-function findActionInArray(actions: TAction[], id: string): TAction {
-  return actions.find((a: TAction) => a.id == id);
+function findActionInArray(actions: TAction[], id: string): TAction | null {
+  const a: TAction = actions.find((a: TAction) => a.id == id);
+  return a != null ? a : null;
 }
 
 function isActionDisplayed(action: TAction): boolean {
@@ -91,6 +114,7 @@ function isActionDisabled(action: TAction): boolean {
 export default {
   label: getActionLabel,
   tooltip: getActionTooltip,
+  classes: getActionClasses,
   actionIcon: getActionIcon,
   bootstrapIcon: getBootstrapIcon,
   actionColor: getActionColor,
