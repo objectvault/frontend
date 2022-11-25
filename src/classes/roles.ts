@@ -174,11 +174,11 @@ export class Roles {
 
   public import(csv: string): Roles {
     /* START.CHECKS */
-    (csv == null || typeof csv !== 'string') && du.throwMessage('"csv" is supposed to be a string.');
+    !(csv == null || typeof csv === 'string') && du.throwMessage('"csv" is supposed to be a string.');
     /* END.CHECKS */
 
     // Is Non Empty String?
-    csv = csv.trim();
+    csv = csv ? csv.trim() : "";
     if (csv.length == 0) { // NO: Return Existing
       return this;
     }
