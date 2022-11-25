@@ -12,11 +12,16 @@
 import _ from "lodash";
 import ws_client from "../ws";
 
-async function getStores(org: string): Promise<any> {
+async function getStores(org: string, params?: any): Promise<any> {
   try {
     let options: any = {
       withCredentials: true,
     };
+
+    // Do we have URL Params?
+    if (params) {
+      options.params = params;
+    }
 
     // Request URL
     let url: string = `/org/${org}/stores`;
@@ -110,8 +115,42 @@ async function createStore(org: string, store: any): Promise<any> {
   }
 }
 
+async function deleteStore(org: string, store: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/org/${org}/store/${store}`;
+
+    // Request
+    const response: any = await ws_client().delete(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return _.get(response, "data.data", null);
+  } catch (e) {
+    throw e;
+  }
+}
+
+
 export default {
   list: getStores,
   get: getStore,
   create: createStore,
+  delete: deleteStore
 }
