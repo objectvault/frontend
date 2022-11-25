@@ -36,6 +36,7 @@
   import type { Roles } from "../../classes/roles";
   import { Organization } from "../../classes/organization";
   import { OrganizationUser } from "../../classes/organization-user";
+  import { OrganizationStore } from "../../classes/organization-store";
   import type { TAction } from "../../objects/actions";
   import type { TSingleFieldList } from "../../objects/single-field-list";
   import sflUtilities from "../../objects/single-field-list";
@@ -52,6 +53,7 @@
   import FormOrgUserRoles from "../../components/forms/form-org-user-roles.svelte";
   import ModalForm from "../../components/modal-form.svelte";
   import ExplorerObjectUsers from "../../components/explorer-object-users.svelte";
+  import ModalMessage from "../../components/modal-message.svelte";
 
   // Component Paramters //
   export let params: any = {}; // IN: Router - Route Parameters
@@ -67,6 +69,10 @@
   let allOrgs: any[] = []; // Organizations Array
   let listAllUsers: any = null; // List of All System Users Returned from API
   let allUsers: any[] = []; // Users Array
+
+  // Message Modal //
+  let oModalMessage: any = null;
+  let arModalMessages: string[] = [];
 
   // Invitation Modal Form //
   let inviteOpen: boolean = false;
@@ -86,7 +92,11 @@
 
   // Store Create Modal Form //
   let storeOpen: boolean = false;
-  const toggleStoreModal = () => (storeOpen = !storeOpen);
+  let storeRefresh: any = null; // Invitation Refresh Callback
+  const toggleStoreModal = (refresh = null) => {
+    storeRefresh = refresh;
+    storeOpen = !storeOpen;
+  };
 
   // Organization Create Modal Form //
   let orgOpen: boolean = false;
@@ -101,6 +111,7 @@
   // Reactive Statements //
   $: sflUsersList = createUsersList(params.org);
   $: sflInvitationsList = createInvitationsList(params.org);
+  $: sflStoresList = createStoresList(params.org);
 
   // DEBUG //
   $: console.log(params);
@@ -131,7 +142,7 @@
       console.info(i);
     } catch (e) {
       notify(e);
-      console.error(ExplorerObjectUsers);
+      console.error(e);
     }
   }
 
@@ -181,13 +192,19 @@
       delete store.password;
 
       let s: any = await apiOrg.stores.create(params.org, store);
-      await reloadStores(params.org);
 
       // Close Modal
       storeOpen = false;
+
+      // Store List Refresh?
+      if (storeRefresh && _.isFunction(storeRefresh)) {
+        await storeRefresh();
+      }
+
+      //      await reloadStores(params.org);
       console.info(s);
     } catch (e) {
-      notify(e.toString());
+      notify(e);
       console.error(e);
     }
   }
@@ -229,7 +246,13 @@
   }
 
   function titleModalOrgUserRoles(ou: OrganizationUser): string {
-    const ro: boolean = isSelf(ou.user());
+    const ro: boolean =
+      !organizationUser
+        .roles()
+        .hasRole(
+          apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
+          apiRoles.FUNCTION_UPDATE
+        ) || isSelf(ou.user());
     const username: string = ou.username();
     const mode: string = ro ? "View" : "Modify";
     return `${mode} ${username} Roles`;
@@ -239,13 +262,12 @@
     return {
       roles: ou.roles(),
       readOnly:
-        isSelf(ou.user()) ||
         !organizationUser
           .roles()
           .hasRole(
             apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
             apiRoles.FUNCTION_UPDATE
-          ),
+          ) || isSelf(ou.user()),
       isSystemOrg: organization.isSystem(),
       isSystemUser: ou.isAdmin(),
     };
@@ -279,6 +301,59 @@
     return false;
   }
 
+  function actionsMessageModal(type: string) {
+    switch (type) {
+      case "delete-store":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel Deletion",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "danger",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Remove User
+                const action: TAction = oModalMessage.params.action;
+                const e: OrganizationStore = oModalMessage.params.entry;
+                console.info(`Clicked [${action.id}] on [${e.storename()}]`);
+                await apiOrg.stores.delete(organization.id(), e.store());
+
+                // User List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(
+                  `Store [${e.storename()}] DELETED from Organization [${organization.name()}]`
+                );
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Delete Store",
+          },
+        ];
+    }
+  }
+
   function entryActionsUsersList(entry: OrganizationUser): TAction[] {
     /* CONDITIONS:
      * IS SELF : Read Only (Can't Edit)
@@ -297,18 +372,13 @@
           roleModifyEntry = entry;
           toggleRolesModifyModal();
         },
-        display: () => {
-          return (
-            entry.roles() != null &&
-            (self ||
-              organizationUser
-                .roles()
-                .hasRole(
-                  apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
-                  apiRoles.FUNCTION_READ
-                ))
-          );
-        },
+        display: () =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
+              apiRoles.FUNCTION_READ
+            ) && entry.roles() != null,
         label: "Roles",
         tooltip: self ? "View My Permissions" : "Modify User Permissions",
       },
@@ -318,7 +388,13 @@
         color: "danger",
         handler: (a: TAction) =>
           console.info(`Clicked [${a.id}] on [${entry.username()}]`),
-        display: () => !self,
+        display: () =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_DELETE
+            ) && !self,
         label: "Delete",
         tooltip: "Remove User from Organization",
       },
@@ -451,6 +527,88 @@
       } else {
         return apiOrg.invites.list(org);
       }
+    };
+    return l;
+  }
+
+  function listActionsStoresList(entry: any): TAction[] {
+    return [
+      {
+        id: "store.create",
+        icon: "plus-square",
+        color: "primary",
+        handler: (a: TAction) => {
+          // TODO: Fix Hack
+          const refresh: any = _.get(a, "__reloadList", null);
+          toggleStoreModal(refresh);
+        },
+        label: "Create",
+        tooltip: "Create Store",
+      },
+    ];
+  }
+
+  function entryActionsStoresList(entry: any): TAction[] {
+    return [
+      {
+        id: "store.delete",
+        icon: "trash",
+        color: "danger",
+        handler: (a: TAction, e: OrganizationStore) => {
+          oModalMessage = {
+            title: "Delete Store",
+            message: `Delete store [${e.storename()}] from Organization?`,
+            type: "delete-store",
+            params: {
+              action: a,
+              entry: e,
+            },
+          };
+        },
+        label: "Delete",
+        tooltip: "Delete Store",
+      },
+    ];
+  }
+
+  function createStoresList(org: string): TSingleFieldList {
+    // Create Basic SFL Object
+    const l: TSingleFieldList = {
+      listActions: listActionsStoresList,
+      header: {
+        title: "Stores",
+      },
+      filter: sflUtilities.standardFilterObject(
+        "alias",
+        null,
+        "Filter by Alias"
+      ),
+      entry: sflUtilities.standardEntryObject(
+        "store",
+        "storename",
+        "sd-card-fill"
+      ),
+      entryActions: entryActionsStoresList,
+      loader: null,
+    };
+
+    // Create Loader
+    l.loader = async (): Promise<any> => {
+      let fv: string = l.filter.get();
+      let list: any = null;
+      if (fv.length) {
+        const filter: string = `contains(alias, "${fv}")`;
+        list = await apiOrg.stores.list(org, {
+          filter,
+        });
+      } else {
+        list = await apiOrg.stores.list(org);
+      }
+
+      // Map List Items
+      list.items = list.items.map((i: any) => new OrganizationStore(i));
+
+      return list;
     };
     return l;
   }
@@ -730,6 +888,17 @@
   <title>ObjectVault - Modify Organization [{params.org}]</title>
 </svelte:head>
 
+{#if oModalMessage !== null}
+  <ModalMessage
+    isOpen={true}
+    title={oModalMessage.title}
+    message={oModalMessage.message}
+    actions={actionsMessageModal(oModalMessage.type)}
+    messages={arModalMessages}
+    centered={true}
+  />
+{/if}
+
 {#if user && organization}
   <ModalForm
     form={FormInviteToOrg}
@@ -845,6 +1014,13 @@
       </div>
     {/if}
     {#if !organization.isSystem()}
+      {#if organizationUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_LIST)}
+        <div class="row mb-3">
+          <SingleFieldExplorer list={sflStoresList} class="col-12 p-0" />
+        </div>
+      {/if}
       {#if listOfStores != null}
         <div name="list-of-stores" class="row card">
           <h3 class="card-header d-flex">
