@@ -170,7 +170,13 @@
   }
 
   function titleModalStoreUserRoles(ou: StoreUser): string {
-    const ro: boolean = isSelf(ou.user());
+    const ro: boolean =
+      !storeUser
+        .roles()
+        .hasRole(
+          apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_ROLES,
+          apiRoles.FUNCTION_UPDATE
+        ) || isSelf(ou.user());
     const username: string = ou.username();
     const mode: string = ro ? "View" : "Modify";
     return `${mode} ${username} Roles`;
@@ -179,7 +185,13 @@
   function propsFormStoreUserRoles(ou: StoreUser): any {
     return {
       roles: ou.roles(),
-      readOnly: isSelf(ou.user()),
+      readOnly:
+        !storeUser
+          .roles()
+          .hasRole(
+            apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_ROLES,
+            apiRoles.FUNCTION_UPDATE
+          ) || isSelf(ou.user()),
     };
   }
 
@@ -240,6 +252,7 @@
         ];
     }
   }
+
   function entryActionsUsersList(entry: StoreUser): TAction[] {
     /* CONDITIONS:
      * IS SELF : Read Only (Can't Edit)
@@ -259,6 +272,13 @@
         },
         label: "Roles",
         tooltip: self ? "View My Permissions" : "Modify User Permissions",
+        display: () =>
+          storeUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_ROLES,
+              apiRoles.FUNCTION_READ
+            ) && entry.roles() != null,
       },
       {
         id: "user.delete",
@@ -275,7 +295,13 @@
             },
           };
         },
-        display: () => !self,
+        display: () =>
+          storeUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_DELETE
+            ) && !self,
         label: "Delete",
         tooltip: "Remove User from Store",
       },
@@ -526,26 +552,6 @@
     return l;
   }
 
-  async function reloadInvitations(id: string): Promise<any> {
-    try {
-      // Reload nvitations List
-      const list: any = await apiStore.invites.list(id);
-      if (list != null) {
-        listOfInvitations = list;
-        invitations = listOfInvitations.items ? listOfInvitations.items : [];
-      }
-
-      if (invitations.length == 0) {
-        console.log("Store has No Invitations");
-      }
-
-      return true;
-    } catch (e) {
-      notify(e.toString());
-      return null;
-    }
-  }
-
   async function loadStore(id: string): Promise<Store> {
     try {
       let o: any = await apiStore.get(id);
@@ -593,9 +599,6 @@
         // Display Template List
         sflTemplatesList = createTemplatesList();
       }
-
-      // await reloadUsers(id);
-      // await reloadInvitations(id);
 
       spinner = false;
       return true;
