@@ -8,13 +8,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Import Common State Management Function
-import ObjectState from "../api/states";
-import { Roles } from './roles';
+/* START.CHECKS */
+import du from "../dev-utils";
+/* END.CHECKS */
 
-function isStoreUser(o: any): o is StoreUser {
-  return o != null && typeof o === 'object' && 'isValid' in o && '_store' in o && '_user' in o;
-}
+// Import Common State Management Function
+import { Roles } from './roles';
 
 export class StoreUser {
   private _store: string = null;
@@ -24,9 +23,17 @@ export class StoreUser {
   private _state: number = 0;
 
   constructor(o?: any) {
-    if (o != null && typeof o === 'object') {
+    /* START.CHECKS */
+    !(o == null || typeof o === 'object') && du.throwMessage('Passed Invalid Object Value to constructor.');
+    /* END.CHECKS */
+
+    if (o) {
       this._import(o)
     }
+  }
+
+  public static isOfType(o: any): boolean {
+    return o != null && typeof o === 'object' && 'isValid' in o && '_store' in o && '_user' in o;
   }
 
   public isValid(): boolean {
