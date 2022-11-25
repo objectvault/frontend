@@ -19,7 +19,9 @@
     CardBody,
     CardFooter,
     CardHeader,
+    CardSubtitle,
     CardTitle,
+    CardText,
     Icon,
     Offcanvas,
   } from "sveltestrap";
@@ -291,6 +293,25 @@
   <slot />
 
   <Offcanvas isOpen={bOpenOffcanvas} {toggle} header="Profile" placement="end">
+    {#if user}
+      <Card class="mb-3">
+        <CardHeader>
+          <CardTitle>
+            <div class="row">
+              <div class="col-4 fw-bold">
+                {user.alias()}
+              </div>
+              <div class="col-8 border-start">
+                {user.name()}
+              </div>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+          <CardSubtitle>{user.email()}</CardSubtitle>
+        </CardBody>
+      </Card>
+    {/if}
     <Button color="danger" on:click={(e) => onShowLogoutModal(e, true)}>
       <Icon name="arrow-left" />
       Leave
