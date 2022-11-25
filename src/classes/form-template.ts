@@ -87,7 +87,7 @@ export class EnhancedFieldTemplate {
   constructor(f: FieldTemplate, defaults: any) {
     /* START.CHECKS */
     (f == null || !(f instanceof FieldTemplate)) && du.throwMessage("Invalid Parameter Value for 'f'. FieldTemplate expected.");
-    (defaults == null || !_.isPlainObject(defaults)) && du.throwMessage("Invalid Parameter Value for 'defaults'. NULL or Plain Object expected.");
+    !((defaults == null) || _.isPlainObject(defaults)) && du.throwMessage("Invalid Parameter Value for 'defaults'. NULL or Plain Object expected.");
     /* END.CHECKS */
 
     this._field = f;
