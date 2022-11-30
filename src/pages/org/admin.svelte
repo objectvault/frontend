@@ -52,7 +52,6 @@
   import FormInviteToOrg from "../../components/forms/form-invite-to-org.svelte";
   import FormOrgUserRoles from "../../components/forms/form-org-user-roles.svelte";
   import ModalForm from "../../components/modal-form.svelte";
-  import ExplorerObjectUsers from "../../components/explorer-object-users.svelte";
   import ModalMessage from "../../components/modal-message.svelte";
 
   // Component Paramters //
@@ -301,6 +300,7 @@
     return false;
   }
 
+  // START: SINGLE FIELD LIST - Users //
   function actionsMessageModal(type: string) {
     switch (type) {
       case "delete-store":
@@ -451,7 +451,9 @@
     };
     return l;
   }
+  // END: SINGLE FIELD LIST - Users //
 
+  // START: SINGLE FIELD LIST - Invitations //
   function listActionsInvitationsList(entry: any): TAction[] {
     return [
       {
@@ -530,89 +532,9 @@
     };
     return l;
   }
+  // END: SINGLE FIELD LIST - Invitations //
 
-  function listActionsStoresList(entry: any): TAction[] {
-    return [
-      {
-        id: "store.create",
-        icon: "plus-square",
-        color: "primary",
-        handler: (a: TAction) => {
-          // TODO: Fix Hack
-          const refresh: any = _.get(a, "__reloadList", null);
-          toggleStoreModal(refresh);
-        },
-        label: "Create",
-        tooltip: "Create Store",
-      },
-    ];
-  }
-
-  function entryActionsStoresList(entry: any): TAction[] {
-    return [
-      {
-        id: "store.delete",
-        icon: "trash",
-        color: "danger",
-        handler: (a: TAction, e: OrganizationStore) => {
-          oModalMessage = {
-            title: "Delete Store",
-            message: `Delete store [${e.storename()}] from Organization?`,
-            type: "delete-store",
-            params: {
-              action: a,
-              entry: e,
-            },
-          };
-        },
-        label: "Delete",
-        tooltip: "Delete Store",
-      },
-    ];
-  }
-
-  function createStoresList(org: string): TSingleFieldList {
-    // Create Basic SFL Object
-    const l: TSingleFieldList = {
-      listActions: listActionsStoresList,
-      header: {
-        title: "Stores",
-      },
-      filter: sflUtilities.standardFilterObject(
-        "alias",
-        null,
-        "Filter by Alias"
-      ),
-      entry: sflUtilities.standardEntryObject(
-        "store",
-        "storename",
-        "sd-card-fill"
-      ),
-      entryActions: entryActionsStoresList,
-      loader: null,
-    };
-
-    // Create Loader
-    l.loader = async (): Promise<any> => {
-      let fv: string = l.filter.get();
-      let list: any = null;
-      if (fv.length) {
-        const filter: string = `contains(alias, "${fv}")`;
-        list = await apiOrg.stores.list(org, {
-          filter,
-        });
-      } else {
-        list = await apiOrg.stores.list(org);
-      }
-
-      // Map List Items
-      list.items = list.items.map((i: any) => new OrganizationStore(i));
-
-      return list;
-    };
-    return l;
-  }
-
+  // START: EXPLORER - Templates //
   async function templateListLoader(l: TModelStateList): Promise<any> {
     const fv: string = l.filter.get();
     const filter: string = fv.length ? `contains(name, "${fv}")` : null;
@@ -749,6 +671,106 @@
     l.loader = (): Promise<any> => templateListLoader(l);
     return l;
   }
+  // END: EXPLORER - Templates //
+
+  // START: SINGLE FIELD LIST - Stores //
+  function listActionsStoresList(entry: any): TAction[] {
+    return [
+      {
+        id: "store.create",
+        icon: "plus-square",
+        color: "primary",
+        handler: (a: TAction) => {
+          // TODO: Fix Hack
+          const refresh: any = _.get(a, "__reloadList", null);
+          toggleStoreModal(refresh);
+        },
+        display: () =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
+              apiRoles.FUNCTION_CREATE
+            ),
+        label: "Create",
+        tooltip: "Create Store",
+      },
+    ];
+  }
+
+  function entryActionsStoresList(entry: any): TAction[] {
+    return [
+      {
+        id: "store.delete",
+        icon: "trash",
+        color: "danger",
+        handler: (a: TAction, e: OrganizationStore) => {
+          oModalMessage = {
+            title: "Delete Store",
+            message: `Delete store [${e.storename()}] from Organization?`,
+            type: "delete-store",
+            params: {
+              action: a,
+              entry: e,
+            },
+          };
+        },
+        display: () =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
+              apiRoles.FUNCTION_DELETE
+            ),
+        label: "Delete",
+        tooltip: "Delete Store",
+      },
+    ];
+  }
+
+  function createStoresList(org: string): TSingleFieldList {
+    // Create Basic SFL Object
+    const l: TSingleFieldList = {
+      listActions: listActionsStoresList,
+      header: {
+        title: "Stores",
+      },
+      filter: sflUtilities.standardFilterObject(
+        "alias",
+        null,
+        "Filter by Alias"
+      ),
+      entry: sflUtilities.standardEntryObject(
+        "store",
+        "storename",
+        "sd-card-fill",
+        (os: OrganizationStore): string => `#/store/${os.store()}`
+      ),
+      entryActions: entryActionsStoresList,
+      loader: null,
+    };
+
+    // Create Loader
+    l.loader = async (): Promise<any> => {
+      let fv: string = l.filter.get();
+      let list: any = null;
+      if (fv.length) {
+        const filter: string = `contains(alias, "${fv}")`;
+        list = await apiOrg.stores.list(org, {
+          filter,
+        });
+      } else {
+        list = await apiOrg.stores.list(org);
+      }
+
+      // Map List Items
+      list.items = list.items.map((i: any) => new OrganizationStore(i));
+
+      return list;
+    };
+    return l;
+  }
+  // END: SINGLE FIELD LIST - Stores //
 
   async function loadOrganization(id: string): Promise<Organization> {
     const r: any = await apiOrg.get(id);
@@ -1019,108 +1041,6 @@
         .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_LIST)}
         <div class="row mb-3">
           <SingleFieldExplorer list={sflStoresList} class="col-12 p-0" />
-        </div>
-      {/if}
-      {#if listOfStores != null}
-        <div name="list-of-stores" class="row card">
-          <h3 class="card-header d-flex">
-            <div class="col text-center">Stores</div>
-            {#if organizationUser
-              .roles()
-              .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_CREATE)}
-              <div name="actions" class="col-auto">
-                <Button color="primary" on:click={toggleStoreModal}>
-                  <Icon name="plus-square" />
-                  <span class="d-none d-md-inline">New Store</span>
-                </Button>
-              </div>
-            {/if}
-          </h3>
-          <div class="card-header">
-            <div class="d-flex flex-column pt-2">
-              <div class="d-flex">
-                <div class="input-group">
-                  <button
-                    type="button"
-                    class="btn btn-primary dropdown-toggle"
-                    id="dropdown"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <span class="align-text-bottom d-none d-sm-inline"
-                      >Size:</span
-                    >
-                    <span class="align-text-bottom">10</span>
-                  </button>
-                  <div class="dropdown-menu" aria-labelledby="pageSize">
-                    <a href="#" class="dropdown-item active">5</a>
-                    <a href="#" class="dropdown-item">10</a>
-                    <a href="#" class="dropdown-item">100</a>
-                    <a href="#" class="dropdown-item">All</a>
-                  </div>
-                  <input
-                    type="text"
-                    class="form-control"
-                    placeholder="Search text here"
-                    aria-label="Text input with dropdown"
-                  />
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    id="buttonAfter"
-                  >
-                    <i class="bi-search" style="font-size: 1rem;" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <ul class="list-group list-group-flush">
-            {#if hasPageUp(listOfStores)}
-              <li class="list-group-item">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-no-outline w-100"
-                >
-                  <i class="bi-arrow-bar-up text-primary" />
-                </button>
-              </li>
-            {/if}
-            {#each stores as store}
-              <li class="list-group-item d-flex">
-                <div class="col">
-                  <i class="bi-sd-card-fill" />
-                  <a
-                    href="#/store/{store.store}"
-                    class="link-secondary text-decoration-none">{store.alias}</a
-                  >
-                </div>
-                <div class="col-auto">
-                  <button
-                    name="deleteStore"
-                    type="button"
-                    class="btn btn-outline-danger btn-no-outline px-1"
-                  >
-                    <i class="bi-dash-circle" />
-                  </button>
-                </div>
-              </li>
-            {/each}
-            {#if hasPageDown(listOfStores)}
-              <li class="list-group-item">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-no-outline w-100"
-                >
-                  <i
-                    class="bi-arrow-bar-down text-primary"
-                    style="font-size: 1rem;"
-                  />
-                </button>
-              </li>
-            {/if}
-          </ul>
         </div>
       {/if}
     {:else}
