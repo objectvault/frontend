@@ -8,7 +8,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// cSpell:ignore ferreira, paulo, sourcenotes
+// cSpell:ignore TSFL
 
 // Libraries //
 import _ from "lodash";
@@ -26,6 +26,7 @@ export type TSFLEntry = {
   id: (entry: any) => string;
   value: (entry: any) => string;
   icon: (entry: any) => string;
+  href: (entry: any) => string | null;
   // OPTIONAL: Extra Properties
   [key: string]: any;
 }
@@ -113,14 +114,16 @@ function nullOnEmptyTrimmedString(s: string): string {
   return s !== null && s.length ? s : null;
 }
 
-function getStandardEntryObject(id: string, display: string, icon?: string): TSFLEntry {
+function
+function getStandardEntryObject(id: string, display: string, icon?: string, href?: any): TSFLEntry {
   const e: TSFLEntry = {
     _id: nullOnEmptyTrimmedString(id),
     _display: nullOnEmptyTrimmedString(display),
     _icon: nullOnEmptyTrimmedString(icon),
     id: null,
     value: null,
-    icon: null
+    icon: null,
+    href: null
   }
 
   e.id = (entry: any): string => {
@@ -142,6 +145,13 @@ function getStandardEntryObject(id: string, display: string, icon?: string): TSF
     return entry != null && e._icon !== null ? e._icon : null;
   };
 
+  if (href != null) {
+    if (_.isString(href)) {
+      e.href = () => href;
+    } else if (_.isFunction(href)) {
+      e.href = href;
+    }
+  }
   return e;
 }
 

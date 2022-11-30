@@ -280,7 +280,15 @@
           class="col align-self-center text-warning"
         >
           <Icon name={list.entry.icon(entry)} />
-          <span class="text-secondary">{list.entry.value(entry)}</span>
+          {#if list.entry.href == null}
+            <span class="text-secondary">{list.entry.value(entry)}</span>
+          {:else}
+            <a
+              href={list.entry.href(entry)}
+              class="link-secondary text-decoration-none"
+              >{list.entry.value(entry)}</a
+            >
+          {/if}
         </div>
         <div name="actions" class="col-auto">
           {#each sflUtilities.entryActions(list, entry) as action, i}
