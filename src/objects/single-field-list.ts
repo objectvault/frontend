@@ -114,7 +114,6 @@ function nullOnEmptyTrimmedString(s: string): string {
   return s !== null && s.length ? s : null;
 }
 
-function
 function getStandardEntryObject(id: string, display: string, icon?: string, href?: any): TSFLEntry {
   const e: TSFLEntry = {
     _id: nullOnEmptyTrimmedString(id),
