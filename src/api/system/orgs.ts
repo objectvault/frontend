@@ -12,11 +12,16 @@
 import _ from "lodash";
 import ws_client from "../ws";
 
-async function listOrganizations(): Promise<any> {
+async function listOrganizations(params?: any): Promise<any> {
   try {
     let options: any = {
       withCredentials: true,
     };
+
+    // Do we have URL Params?
+    if (params) {
+      options.params = params;
+    }
 
     // Request URL
     let url: string = `/system/orgs`;
