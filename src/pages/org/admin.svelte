@@ -12,9 +12,6 @@
   // SVELTE API //
   import { onDestroy } from "svelte";
 
-  // SVELTESTRAP //
-  import { Button, Icon } from "sveltestrap";
-
   // STORES //
   import sessionUser from "../../stores/session-user";
   import actionsStore from "../../stores/taskbar-actions";
@@ -64,8 +61,6 @@
   let organizationUser: OrganizationUser = null; // Registry: Organization Session User Registry
   let listOfStores: any = null; // List of Stores Object Returned from API
   let stores: any[] = []; // Stores Array
-  let listAllOrgs: any = null; // List of All Systems Organizations Returned from API
-  let allOrgs: any[] = []; // Organizations Array
   let listAllUsers: any = null; // List of All System Users Returned from API
   let allUsers: any[] = []; // Users Array
 
@@ -91,7 +86,7 @@
 
   // Store Create Modal Form //
   let storeOpen: boolean = false;
-  let storeRefresh: any = null; // Invitation Refresh Callback
+  let storeRefresh: any = null; // Stores SFL Refresh Callback
   const toggleStoreModal = (refresh = null) => {
     storeRefresh = refresh;
     storeOpen = !storeOpen;
@@ -99,7 +94,11 @@
 
   // Organization Create Modal Form //
   let orgOpen: boolean = false;
-  const toggleOrgModal = () => (orgOpen = !orgOpen);
+  let allOrgsRefresh: any = null; // All Orgs SFL Refresh Callback
+  const toggleOrgModal = (refresh = null) => {
+    allOrgsRefresh = refresh;
+    orgOpen = !orgOpen;
+  };
 
   // Template List
   let sflTemplatesList: any = null;
@@ -110,7 +109,8 @@
   // Reactive Statements //
   $: sflUsersList = createUsersList(params.org);
   $: sflInvitationsList = createInvitationsList(params.org);
-  $: sflStoresList = createStoresList(params.org);
+  $: sflListStores = sflStoresCreate(params.org);
+  $: sflListAllOrgs = sflAllOrgsCreate();
 
   // DEBUG //
   $: console.log(params);
@@ -219,10 +219,16 @@
 
     try {
       let o: any = await apiSystem.orgs.create(org);
-      await reloadAllOrgs();
+      // await reloadAllOrgs();
 
       // Close Modal
       orgOpen = false;
+
+      // All Organizations List Refresh?
+      if (allOrgsRefresh && _.isFunction(allOrgsRefresh)) {
+        await allOrgsRefresh();
+      }
+
       console.info(o);
     } catch (e) {
       notify(e.toString());
@@ -303,6 +309,52 @@
   // START: SINGLE FIELD LIST - Users //
   function actionsMessageModal(type: string) {
     switch (type) {
+      case "delete-org":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel Deletion",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "danger",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Remove Organization
+                const action: TAction = oModalMessage.params.action;
+                const e: Organization = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.name()}]`);
+                await apiOrg.delete(e.id());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`Oganization [${e.name()}] DELETED`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Delete Organization",
+          },
+        ];
       case "delete-store":
         return [
           {
@@ -325,13 +377,13 @@
             },
             handler: async (a: TAction) => {
               try {
-                // Remove User
+                // Remove Store
                 const action: TAction = oModalMessage.params.action;
                 const e: OrganizationStore = oModalMessage.params.entry;
-                console.info(`Clicked [${action.id}] on [${e.storename()}]`);
+                console.info(`Clicked [${a.id}] on [${e.storename()}]`);
                 await apiOrg.stores.delete(organization.id(), e.store());
 
-                // User List Refresh?
+                // List Refresh?
                 const refresh: any = _.get(action, "__reloadList", null);
                 if (refresh && _.isFunction(refresh)) {
                   await refresh();
@@ -354,13 +406,13 @@
     }
   }
 
+  // START: SINGLE FIELD LIST - Users //
   function entryActionsUsersList(entry: OrganizationUser): TAction[] {
     /* CONDITIONS:
      * IS SELF : Read Only (Can't Edit)
      * IS Not Self : Depends on Permissions
      */
     const self: boolean = isSelf(entry.user());
-    const isOrgAdmin: boolean = isOrganizationAdmin();
 
     return [
       {
@@ -372,13 +424,13 @@
           roleModifyEntry = entry;
           toggleRolesModifyModal();
         },
-        display: () =>
+        display: (a: TAction, e: OrganizationUser) =>
           organizationUser
             .roles()
             .hasRole(
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
               apiRoles.FUNCTION_READ
-            ) && entry.roles() != null,
+            ) && e.roles() != null,
         label: "Roles",
         tooltip: self ? "View My Permissions" : "Modify User Permissions",
       },
@@ -388,25 +440,15 @@
         color: "danger",
         handler: (a: TAction) =>
           console.info(`Clicked [${a.id}] on [${entry.username()}]`),
-        display: () =>
+        display: (a: TAction, e: OrganizationUser) =>
           organizationUser
             .roles()
             .hasRole(
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_DELETE
-            ) && !self,
+            ) && !organizationUser.isUser(e.user()) /* NOT SELF */,
         label: "Delete",
         tooltip: "Remove User from Organization",
-      },
-      {
-        id: "admin.toggle",
-        icon: isOrgAdmin ? "star-fill" : "star",
-        color: isOrgAdmin ? "warning" : "danger",
-        handler: (a: TAction) =>
-          console.info(`Clicked [${a.id}] on [${entry.username()}]`),
-        disabled: () => self,
-        label: "Admin",
-        tooltip: isOrgAdmin ? "Remove Admin Status" : "Make Admin",
       },
     ];
   }
@@ -674,7 +716,7 @@
   // END: EXPLORER - Templates //
 
   // START: SINGLE FIELD LIST - Stores //
-  function listActionsStoresList(entry: any): TAction[] {
+  function sflStoresListActions(entry: any): TAction[] {
     return [
       {
         id: "store.create",
@@ -698,7 +740,7 @@
     ];
   }
 
-  function entryActionsStoresList(entry: any): TAction[] {
+  function sflStoresEntryActions(entry: any): TAction[] {
     return [
       {
         id: "store.delete",
@@ -728,10 +770,10 @@
     ];
   }
 
-  function createStoresList(org: string): TSingleFieldList {
+  function sflStoresCreate(org: string): TSingleFieldList {
     // Create Basic SFL Object
     const l: TSingleFieldList = {
-      listActions: listActionsStoresList,
+      listActions: sflStoresListActions,
       header: {
         title: "Stores",
       },
@@ -746,7 +788,7 @@
         "sd-card-fill",
         (os: OrganizationStore): string => `#/store/${os.store()}`
       ),
-      entryActions: entryActionsStoresList,
+      entryActions: sflStoresEntryActions,
       loader: null,
     };
 
@@ -765,6 +807,105 @@
 
       // Map List Items
       list.items = list.items.map((i: any) => new OrganizationStore(i));
+
+      return list;
+    };
+    return l;
+  }
+  // END: SINGLE FIELD LIST - Stores //
+
+  // START: SINGLE FIELD LIST - Stores //
+  function sflAllOrgsListActions(entry: any): TAction[] {
+    return [
+      {
+        id: "org.create",
+        icon: "plus-square",
+        color: "primary",
+        handler: (a: TAction) => {
+          // TODO: Fix Hack
+          const refresh: any = _.get(a, "__reloadList", null);
+          toggleOrgModal(refresh);
+        },
+        display: () =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
+              apiRoles.FUNCTION_CREATE
+            ),
+        label: "Organization",
+        tooltip: "Create Organization",
+      },
+    ];
+  }
+
+  function sflAllOrgsEntryActions(entry: any): TAction[] {
+    return [
+      {
+        id: "org.delete",
+        icon: "trash",
+        color: "danger",
+        handler: (a: TAction, e: Organization) => {
+          oModalMessage = {
+            title: "Delete Organization",
+            message: `Delete Organization [${e.name()}]?`,
+            type: "delete-org",
+            params: {
+              action: a,
+              entry: e,
+            },
+          };
+        },
+        display: (a: TAction, e: Organization) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
+              apiRoles.FUNCTION_DELETE
+            ) && !e.isSystem(),
+        label: "Delete",
+        tooltip: "Delete Organization",
+      },
+    ];
+  }
+
+  function sflAllOrgsCreate(): TSingleFieldList {
+    // Create Basic SFL Object
+    const l: TSingleFieldList = {
+      listActions: sflAllOrgsListActions,
+      header: {
+        title: "All Organizations",
+      },
+      filter: sflUtilities.standardFilterObject(
+        "alias",
+        null,
+        "Filter by Alias"
+      ),
+      entry: sflUtilities.standardEntryObject(
+        "id",
+        "alias",
+        "bi-building",
+        (os: Organization): string => `#/org/${os.id()}`
+      ),
+      entryActions: sflAllOrgsEntryActions,
+      loader: null,
+    };
+
+    // Create Loader
+    l.loader = async (): Promise<any> => {
+      let fv: string = l.filter.get();
+      let list: any = null;
+      if (fv.length) {
+        const filter: string = `contains(alias, "${fv}")`;
+        list = await apiSystem.orgs.list({
+          filter,
+        });
+      } else {
+        list = await apiSystem.orgs.list();
+      }
+
+      // Map List Items
+      list.items = list.items.map((i: any) => new Organization(i));
 
       return list;
     };
@@ -796,20 +937,6 @@
 
     if (stores.length == 0) {
       console.log("Organization has No Stores");
-    }
-
-    return list;
-  }
-
-  async function reloadAllOrgs(): Promise<any> {
-    // Reload All Organizations in System
-    const list: any = await apiSystem.orgs.list();
-    if (list != null) {
-      allOrgs = list.items ? list.items : [];
-    }
-
-    if (allOrgs.length == 0) {
-      throw "SYSTEM ERROR: No Organizations";
     }
 
     return list;
@@ -867,8 +994,7 @@
           listOfStores = null;
         }
       } else {
-        // YES: Load All Organizations and Users
-        listAllOrgs = await reloadAllOrgs();
+        // YES: Load All Users
         listAllUsers = await reloadAllUsers();
       }
 
@@ -1040,98 +1166,17 @@
         .roles()
         .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_LIST)}
         <div class="row mb-3">
-          <SingleFieldExplorer list={sflStoresList} class="col-12 p-0" />
+          <SingleFieldExplorer list={sflListStores} class="col-12 p-0" />
         </div>
       {/if}
     {:else}
-      <div class="row card mb-3">
-        <h3 class="card-header d-flex">
-          <div class="col text-center">All Organizations</div>
-          <div name="actions" class="col-auto">
-            <Button color="primary" on:click={toggleOrgModal}>
-              <i class="bi-plus-square" />
-              <span class="d-none d-md-inline">Organization</span>
-            </Button>
-          </div>
-        </h3>
-        <div class="card-header">
-          <div class="d-flex flex-column pt-2">
-            <div class="d-flex">
-              <div class="input-group">
-                <button
-                  type="button"
-                  class="btn btn-primary dropdown-toggle"
-                  id="dropdown"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
-                  <span class="align-text-bottom d-none d-sm-inline">Size:</span
-                  >
-                  <span class="align-text-bottom">10</span>
-                </button>
-                <div class="dropdown-menu" aria-labelledby="pageSize">
-                  <a href="#" class="dropdown-item active">5</a>
-                  <a href="#" class="dropdown-item">10</a>
-                  <a href="#" class="dropdown-item">100</a>
-                  <a href="#" class="dropdown-item">All</a>
-                </div>
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="Search text here"
-                  aria-label="Text input with dropdown"
-                />
-                <button type="button" class="btn btn-primary" id="buttonAfter">
-                  <i class="bi-search" style="font-size: 1rem;" />
-                </button>
-              </div>
-            </div>
-          </div>
+      {#if organizationUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG, apiRoles.FUNCTION_LIST)}
+        <div class="row mb-3">
+          <SingleFieldExplorer list={sflListAllOrgs} class="col-12 p-0" />
         </div>
-        <ul class="list-group list-group-flush">
-          {#if hasPageUp(listAllOrgs)}
-            <li class="list-group-item">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-no-outline w-100"
-              >
-                <i class="bi-arrow-bar-up text-primary" />
-              </button>
-            </li>
-          {/if}
-          {#each allOrgs as org}
-            <li class="list-group-item d-flex">
-              <div class="col">
-                <i class="bi-building" />
-                {org.alias}
-              </div>
-              <div class="col-auto">
-                <button
-                  name="deleteStore"
-                  type="button"
-                  class="btn btn-outline-danger btn-no-outline px-1"
-                >
-                  <i class="bi-dash-circle" />
-                </button>
-              </div>
-            </li>
-          {/each}
-          {#if hasPageDown(listAllOrgs)}
-            <li class="list-group-item">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-no-outline w-100"
-              >
-                <i
-                  class="bi-arrow-bar-down text-primary"
-                  style="font-size: 1rem;"
-                />
-              </button>
-            </li>
-          {/if}
-        </ul>
-      </div>
+      {/if}
       <div class="row card">
         <h3 class="card-header d-flex">
           <div class="col text-center">All Users</div>
