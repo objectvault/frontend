@@ -29,7 +29,7 @@
   // Developer Libraries //
   import utilities from "../../api/utilities";
   import EventEmitter from "../../api/event-emitter";
-  import type { User } from "../../classes/user";
+  import { User } from "../../classes/user";
   import type { Roles } from "../../classes/roles";
   import { Organization } from "../../classes/organization";
   import { OrganizationUser } from "../../classes/organization-user";
@@ -59,10 +59,6 @@
   let user: User = null; // Session User
   let organization: Organization = null; // Organization Object
   let organizationUser: OrganizationUser = null; // Registry: Organization Session User Registry
-  let listOfStores: any = null; // List of Stores Object Returned from API
-  let stores: any[] = []; // Stores Array
-  let listAllUsers: any = null; // List of All System Users Returned from API
-  let allUsers: any[] = []; // Users Array
 
   // Message Modal //
   let oModalMessage: any = null;
@@ -100,9 +96,6 @@
     orgOpen = !orgOpen;
   };
 
-  // Template List
-  let sflTemplatesList: any = null;
-
   // Reactive Stores //
   $: notifyPopUp = $notifyStore;
 
@@ -111,6 +104,8 @@
   $: sflInvitationsList = createInvitationsList(params.org);
   $: sflListStores = sflStoresCreate(params.org);
   $: sflListAllOrgs = sflAllOrgsCreate();
+  $: sflListAllUsers = sflAllUsersCreate();
+  $: sflTemplatesList = createTemplatesList();
 
   // DEBUG //
   $: console.log(params);
@@ -257,7 +252,7 @@
         .hasRole(
           apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
           apiRoles.FUNCTION_UPDATE
-        ) || isSelf(ou.user());
+        ) || organizationUser.isUser(ou.user());
     const username: string = ou.username();
     const mode: string = ro ? "View" : "Modify";
     return `${mode} ${username} Roles`;
@@ -272,19 +267,15 @@
           .hasRole(
             apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ROLES,
             apiRoles.FUNCTION_UPDATE
-          ) || isSelf(ou.user()),
+          ) || organizationUser.isUser(ou.user()),
       isSystemOrg: organization.isSystem(),
-      isSystemUser: ou.isAdmin(),
+      isAdmin: organization.isSystem(),
     };
   }
 
   function isSelf(id: string): boolean {
     // TODO: Check if ID Given Matches Session User ID
-    return organizationUser != null && id == organizationUser.user();
-  }
-
-  function isOrganizationAdmin(): boolean {
-    return organizationUser != null && organizationUser.isAdmin();
+    return organizationUser.isUser(id);
   }
 
   function hasPageUp(l: any) {
@@ -309,6 +300,52 @@
   // START: SINGLE FIELD LIST - Users //
   function actionsMessageModal(type: string) {
     switch (type) {
+      case "delete-user":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel Deletion",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "danger",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Remove Organization
+                const action: TAction = oModalMessage.params.action;
+                const e: User = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.name()}]`);
+                await apiSystem.users.delete(e.id());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`User [${e.name()}] DELETED`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Delete User",
+          },
+        ];
       case "delete-org":
         return [
           {
@@ -814,7 +851,7 @@
   }
   // END: SINGLE FIELD LIST - Stores //
 
-  // START: SINGLE FIELD LIST - Stores //
+  // START: SINGLE FIELD LIST - All Organizations //
   function sflAllOrgsListActions(entry: any): TAction[] {
     return [
       {
@@ -884,7 +921,7 @@
       entry: sflUtilities.standardEntryObject(
         "id",
         "alias",
-        "bi-building",
+        "building",
         (os: Organization): string => `#/org/${os.id()}`
       ),
       entryActions: sflAllOrgsEntryActions,
@@ -911,7 +948,81 @@
     };
     return l;
   }
-  // END: SINGLE FIELD LIST - Stores //
+  // END: SINGLE FIELD LIST - All Organizations //
+
+  // START: SINGLE FIELD LIST - All Users //
+  function sflAllUsersListActions(entry: any): TAction[] {
+    return [];
+  }
+
+  function sflAllUsersEntryActions(entry: any): TAction[] {
+    return [
+      {
+        id: "user.delete",
+        icon: "trash",
+        color: "danger",
+        handler: (a: TAction, e: User) => {
+          oModalMessage = {
+            title: "Delete User",
+            message: `Delete User [${e.name()}]?`,
+            type: "delete-user",
+            params: {
+              action: a,
+              entry: e,
+            },
+          };
+        },
+        display: (a: TAction, e: User) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_DELETE
+            ) && !organizationUser.isUser(e.id()),
+        label: "Delete",
+        tooltip: "Delete User",
+      },
+    ];
+  }
+
+  function sflAllUsersCreate(): TSingleFieldList {
+    // Create Basic SFL Object
+    const l: TSingleFieldList = {
+      listActions: sflAllUsersListActions,
+      header: {
+        title: "All Users",
+      },
+      filter: sflUtilities.standardFilterObject(
+        "alias",
+        null,
+        "Filter by Alias"
+      ),
+      entry: sflUtilities.standardEntryObject("id", "alias", "person-fill"),
+      entryActions: sflAllUsersEntryActions,
+      loader: null,
+    };
+
+    // Create Loader
+    l.loader = async (): Promise<any> => {
+      let fv: string = l.filter.get();
+      let list: any = null;
+      if (fv.length) {
+        const filter: string = `contains(alias, "${fv}")`;
+        list = await apiSystem.users.list({
+          filter,
+        });
+      } else {
+        list = await apiSystem.users.list();
+      }
+
+      // Map List Items
+      list.items = list.items.map((i: any) => new User(i));
+
+      return list;
+    };
+    return l;
+  }
+  // END: SINGLE FIELD LIST - All Users //
 
   async function loadOrganization(id: string): Promise<Organization> {
     const r: any = await apiOrg.get(id);
@@ -928,34 +1039,6 @@
     return ou;
   }
 
-  async function reloadStores(id: string): Promise<any> {
-    // Reload Stores List
-    const list: any = await apiOrg.stores.list(id);
-    if (list != null) {
-      stores = list.items ? list.items : [];
-    }
-
-    if (stores.length == 0) {
-      console.log("Organization has No Stores");
-    }
-
-    return list;
-  }
-
-  async function reloadAllUsers(): Promise<any> {
-    // Reload All Users in System
-    const list: any = await apiSystem.users.list();
-    if (list != null) {
-      allUsers = list.items ? list.items : [];
-    }
-
-    if (allUsers.length == 0) {
-      throw "SYSTEM ERROR: No Users";
-    }
-
-    return list;
-  }
-
   // Page Initialization //
   async function start(): Promise<boolean> {
     console.log("start: org\\admin.svelte");
@@ -966,38 +1049,6 @@
       // TODO: Add Spinner
       organization = await loadOrganization(id);
       organizationUser = await loadOrganizationUser(id, user.id());
-
-      // Is System Organization?
-      if (!organization.isSystem()) {
-        // Display Template List
-        sflTemplatesList = createTemplatesList();
-
-        // NO: Has Store List Access?
-        if (
-          organizationUser &&
-          organizationUser
-            .roles()
-            .hasRole(
-              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
-              apiRoles.FUNCTION_LIST
-            )
-        ) {
-          // YES: Load Stores
-          try {
-            listOfStores = await reloadStores(id);
-          } catch (e) {
-            notify("Failed to Load Stores List");
-            notify(e.toString());
-            listOfStores = null;
-          }
-        } else {
-          listOfStores = null;
-        }
-      } else {
-        // YES: Load All Users
-        listAllUsers = await reloadAllUsers();
-      }
-
       spinner = false;
       return true;
     } catch (e) {
@@ -1154,14 +1205,14 @@
         />
       {/if}
     </div>
-    {#if sflTemplatesList && organizationUser
-        .roles()
-        .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE, apiRoles.FUNCTION_LIST)}
-      <div class="row mb-3">
-        <TemplateExplorer list={sflTemplatesList} class="px-0" />
-      </div>
-    {/if}
     {#if !organization.isSystem()}
+      {#if sflTemplatesList && organizationUser
+          .roles()
+          .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_TEMPLATE, apiRoles.FUNCTION_LIST)}
+        <div class="row mb-3">
+          <TemplateExplorer list={sflTemplatesList} class="px-0" />
+        </div>
+      {/if}
       {#if organizationUser
         .roles()
         .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_LIST)}
@@ -1177,88 +1228,13 @@
           <SingleFieldExplorer list={sflListAllOrgs} class="col-12 p-0" />
         </div>
       {/if}
-      <div class="row card">
-        <h3 class="card-header d-flex">
-          <div class="col text-center">All Users</div>
-        </h3>
-        <div class="card-header">
-          <div class="d-flex flex-column pt-2">
-            <div class="d-flex">
-              <div class="input-group">
-                <button
-                  type="button"
-                  class="btn btn-primary dropdown-toggle"
-                  id="dropdown"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
-                  <span class="align-text-bottom d-none d-sm-inline">Size:</span
-                  >
-                  <span class="align-text-bottom">10</span>
-                </button>
-                <div class="dropdown-menu" aria-labelledby="pageSize">
-                  <a href="#" class="dropdown-item active">5</a>
-                  <a href="#" class="dropdown-item">10</a>
-                  <a href="#" class="dropdown-item">100</a>
-                  <a href="#" class="dropdown-item">All</a>
-                </div>
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="Search text here"
-                  aria-label="Text input with dropdown"
-                />
-                <button type="button" class="btn btn-primary" id="buttonAfter">
-                  <i class="bi-search" style="font-size: 1rem;" />
-                </button>
-              </div>
-            </div>
-          </div>
+      {#if organizationUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER, apiRoles.FUNCTION_LIST)}
+        <div class="row mb-3">
+          <SingleFieldExplorer list={sflListAllUsers} class="col-12 p-0" />
         </div>
-        <ul class="list-group list-group-flush">
-          {#if hasPageUp(listAllUsers)}
-            <li class="list-group-item">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-no-outline w-100"
-              >
-                <i class="bi-arrow-bar-up text-primary" />
-              </button>
-            </li>
-          {/if}
-          {#each allUsers as user}
-            <li class="list-group-item d-flex">
-              <div class="col">
-                <i class="bi-sd-card-fill" />
-                {user.alias}
-              </div>
-              <div class="col-auto">
-                <button
-                  name="deleteStore"
-                  type="button"
-                  class="btn btn-outline-danger btn-no-outline px-1"
-                >
-                  <i class="bi-dash-circle" />
-                </button>
-              </div>
-            </li>
-          {/each}
-          {#if hasPageDown(listAllUsers)}
-            <li class="list-group-item">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-no-outline w-100"
-              >
-                <i
-                  class="bi-arrow-bar-down text-primary"
-                  style="font-size: 1rem;"
-                />
-              </button>
-            </li>
-          {/if}
-        </ul>
-      </div>
+      {/if}
     {/if}
   {/if}
 </main>
