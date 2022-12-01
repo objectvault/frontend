@@ -103,12 +103,12 @@ function findActionInArray(actions: TAction[], id: string): TAction | null {
   return a != null ? a : null;
 }
 
-function isActionDisplayed(action: TAction): boolean {
-  return action.display == null || action.display(action);
+function isActionDisplayed(action: TAction, o?: any): boolean {
+  return action.display == null || action.display(action, o);
 }
 
-function isActionDisabled(action: TAction): boolean {
-  return action.disabled != null && action.disabled(action);
+function isActionDisabled(action: TAction, o?: any): boolean {
+  return action.disabled != null && action.disabled(action, o);
 }
 
 export default {
