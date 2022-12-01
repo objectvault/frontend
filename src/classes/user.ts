@@ -32,6 +32,10 @@ export class User {
     return this._id != null && this._username != null && this._email != null;
   }
 
+  public isSelf(id: string): boolean {
+    return id === this._id
+  }
+
   public isEqual(u: User, full = false): boolean {
     if ((u == null) || !u.isValid() || !this.isValid()) {
       return false;

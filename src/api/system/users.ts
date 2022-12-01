@@ -12,11 +12,16 @@
 import _ from "lodash";
 import ws_client from "../ws";
 
-async function listUsers(): Promise<any> {
+async function listUsers(params?: any): Promise<any> {
   try {
     let options: any = {
       withCredentials: true,
     };
+
+    // Do we have URL Params?
+    if (params) {
+      options.params = params;
+    }
 
     // Request URL
     let url: string = `/system/users`;
@@ -45,6 +50,15 @@ async function listUsers(): Promise<any> {
   }
 }
 
+async function deleteUser(id: string): Promise<any> {
+  try {
+    throw new Error("TODO: IMPLEMENT");
+  } catch (e) {
+    throw e;
+  }
+}
+
 export default {
-  list: listUsers
+  list: listUsers,
+  delete: deleteUser
 }
