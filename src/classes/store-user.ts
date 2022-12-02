@@ -40,6 +40,10 @@ export class StoreUser {
     return this._store != null && this._user != null && this._roles != null;
   }
 
+  public isUser(id: string): boolean {
+    return id === this._user;
+  }
+
   public isEqual(o: StoreUser, full = false): boolean {
     if ((o == null) || !o.isValid() || !this.isValid()) {
       return false;
