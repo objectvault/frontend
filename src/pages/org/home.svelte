@@ -20,7 +20,11 @@
   import actionsStore from "../../stores/taskbar-actions";
   import notifyStore from "../../stores/notify";
 
+  // Other Libraries //
+  import _ from "lodash";
+
   // WebServices API Library //
+  import apiMe from "../../api/me";
   import apiOrg from "../../api/org";
   import apiOrgUser from "../../api/org/org-user";
   import apiRoles from "../../api/roles";
@@ -30,11 +34,15 @@
   import type { User } from "../../classes/user";
   import { Organization } from "../../classes/organization";
   import { OrganizationUser } from "../../classes/organization-user";
+  import { OrganizationStore } from "../../classes/organization-store";
   import type { TAction } from "../../objects/actions";
+  import type { TSingleFieldList } from "../../objects/single-field-list";
 
   // CUSTOM Components //
   import Overlay from "../../components/overlay.svelte";
   import Spinner from "../../components/spinner.svelte";
+  import SingleFieldExplorer from "../../components/list-single-field.svelte";
+  import sflUtilities from "../../objects/single-field-list";
 
   // Component Paramters //
   export let params: any = {}; // IN: Router - Route Parameters
@@ -44,11 +52,12 @@
   let organization: Organization = null; // Organization Object
   let organizationUser: OrganizationUser = null; // Registry: Organization Session User Registry
   let user: User = null;
-  let listOfStores: any = null; // List Object Returned from API
-  let stores: any[] = []; // Stores Array
 
   // Reactive Stores //
   $: notifyPopUp = $notifyStore;
+
+  // Reactive Statements //
+  $: sflListStores = sflStoresCreate(params.org);
 
   // DEBUG //
   $: console.log(params);
@@ -68,25 +77,6 @@
     console.log(n);
   }
 
-  function hasPageUp(l: any) {
-    if (l != null && typeof l.pager == "object") {
-      const p: any = l.pager;
-      return p.offset > 0;
-    }
-
-    return false;
-  }
-
-  function hasPageDown(l: any) {
-    if (l != null && typeof l.pager == "object") {
-      const p: any = l.pager;
-      const last: number = p.offset + p.count;
-      return last < p.countAll;
-    }
-
-    return false;
-  }
-
   async function loadOrganization(id: string): Promise<Organization> {
     const r: any = await apiOrg.get(id);
     const org: Organization = new Organization(r);
@@ -102,19 +92,58 @@
     return ou;
   }
 
-  async function reloadStores(id: string): Promise<any> {
-    // Reload Stores List
-    const list: any = await apiOrg.stores.list(id);
-    if (list != null) {
-      stores = list.items ? list.items : [];
-    }
+  // START: SINGLE FIELD LIST - Stores //
+  function sflStoresCreate(org: string): TSingleFieldList {
+    // Create Basic SFL Object
+    const l: TSingleFieldList = {
+      listActions: null,
+      header: {
+        title: "Stores",
+      },
+      filter: sflUtilities.standardFilterObject(
+        "alias",
+        null,
+        "Filter by Alias"
+      ),
+      entry: sflUtilities.standardEntryObject(
+        "store",
+        "storename",
+        "sd-card-fill",
+        (os: OrganizationStore): string => `#/store/${os.store()}`
+      ),
+      entryActions: null,
+      loader: null,
+    };
 
-    if (stores.length == 0) {
-      notify("Organization has No Stores");
-    }
+    /* TODO: Add Entry Action to Toggle Store as Favorite (or not)
+     * Requires Sinbgle Field Explorer to have Entry Actions with Set State
+     * (i.e. if you change the stae the icon / text changes)
+     */
+    // Create Loader
+    l.loader = async (): Promise<any> => {
+      let fv: string = l.filter.get();
+      let list: any = null;
+      if (fv.length) {
+        const filter: string = `contains(alias, "${fv}")`;
+        list = await apiOrg.stores.list(org, {
+          filter,
+        });
+      } else {
+        list = await apiOrg.stores.list(org);
+      }
 
-    return list;
+      // Map List Items
+      list.items = list.items.map((i: any) => new OrganizationStore(i));
+
+      if (list.items.length == 0) {
+        notify("Organization has No Stores");
+      }
+
+      return list;
+    };
+    return l;
   }
+  // END: SINGLE FIELD LIST - Stores //
 
   // Page Initialization //
   async function start(): Promise<boolean> {
@@ -128,29 +157,7 @@
       organizationUser = await loadOrganizationUser(id, user.id());
 
       // Is System Organization?
-      if (!organization.isSystem()) {
-        // NO: Has Store List Access?
-        if (
-          organizationUser &&
-          organizationUser
-            .roles()
-            .hasRole(
-              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
-              apiRoles.FUNCTION_LIST
-            )
-        ) {
-          // YES: Load Stores
-          try {
-            listOfStores = await reloadStores(id);
-          } catch (e) {
-            notify("Failed to Load Stores List");
-            notify(e.toString());
-            listOfStores = null;
-          }
-        } else {
-          listOfStores = null;
-        }
-      } else {
+      if (organization.isSystem()) {
         // YES: Redirect to Admin Page
         replace(`/admin/org/${params.org}`);
       }
@@ -158,7 +165,7 @@
       spinner = false;
       return true;
     } catch (e) {
-      setTimeout(() => (spinner = false), 1000);
+      setTimeout(() => (spinner = false), 500);
       notify(e.toString());
       return false;
     }
@@ -201,110 +208,37 @@
   {/if}
 
   {#if user && organization}
-    <div class="card mb-3">
-      <h3 class="card-header d-flex">
-        <div class="col">{organization.alias()}</div>
-        <div name="actions" class="col-auto">
-          {#if (organization.state() & 0xfff) == 0}
-            <a
-              id="editOrganization"
-              href="#/admin/org/{params.org}"
-              class="btn btn-warning"
-              role="button"
-            >
-              <i class="bi-pencil" />
-              <span class="d-none d-md-inline">Edit</span>
-            </a>
-          {/if}
+    <div class="row mb-3">
+      <div class="card p-0">
+        <h3 class="card-header d-flex">
+          <div class="col">{organization.alias()}</div>
+          <div name="actions" class="col-auto">
+            {#if (organization.state() & 0xfff) == 0}
+              <a
+                id="editOrganization"
+                href="#/admin/org/{params.org}"
+                class="btn btn-warning"
+                role="button"
+              >
+                <i class="bi-pencil" />
+                <span class="d-none d-md-inline">Edit</span>
+              </a>
+            {/if}
+          </div>
+        </h3>
+        <div class="card-body">
+          {organization.name() != null ? organization.name() : ""}
         </div>
-      </h3>
-      <div class="card-body">
-        {organization.name() != null ? organization.name() : ""}
       </div>
     </div>
-    {#if !organization.isSystem() && listOfStores != null}
-      <div class="card">
-        <h3 class="card-header text-center">Stores</h3>
-        <div class="card-header">
-          <div class="d-flex flex-column pt-2">
-            <div class="d-flex">
-              <div class="input-group">
-                <button
-                  type="button"
-                  class="btn btn-primary dropdown-toggle"
-                  id="dropdown"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
-                  <span class="align-text-bottom d-none d-sm-inline">Size:</span
-                  >
-                  <span class="align-text-bottom">10</span>
-                </button>
-                <div class="dropdown-menu" aria-labelledby="pageSize">
-                  <a href="#" class="dropdown-item">5</a>
-                  <a href="#" class="dropdown-item active">10</a>
-                  <a href="#" class="dropdown-item">100</a>
-                  <a href="#" class="dropdown-item">All</a>
-                </div>
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="Search text here"
-                  aria-label="Text input with dropdown"
-                />
-                <button type="button" class="btn btn-primary" id="buttonAfter">
-                  <i class="bi-search" />
-                </button>
-              </div>
-            </div>
-          </div>
+    {#if !organization.isSystem() && organizationUser}
+      {#if organizationUser
+        .roles()
+        .hasRole(apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE, apiRoles.FUNCTION_LIST)}
+        <div class="row">
+          <SingleFieldExplorer list={sflListStores} class="col-12 p-0" />
         </div>
-        <ul class="list-group list-group-flush">
-          {#if hasPageUp(listOfStores)}
-            <li class="list-group-item">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-no-outline w-100"
-              >
-                <i class="bi-arrow-bar-up text-primary" />
-              </button>
-            </li>
-          {/if}
-          {#each stores as store}
-            <li class="list-group-item d-flex">
-              <div class="col">
-                <i class="bi-sd-card-fill" />
-                <a
-                  href="#/store/{store.store}"
-                  class="link-secondary text-decoration-none">{store.alias}</a
-                >
-              </div>
-              <div class="col-auto">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-no-outline"
-                >
-                  <i class="bi-star text-primary" />
-                </button>
-              </div>
-            </li>
-          {/each}
-          {#if hasPageDown(listOfStores)}
-            <li class="list-group-item">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-no-outline w-100"
-              >
-                <i
-                  class="bi-arrow-bar-down text-primary"
-                  style="font-size: 1rem;"
-                />
-              </button>
-            </li>
-          {/if}
-        </ul>
-      </div>
+      {/if}
     {/if}
   {/if}
 </main>
