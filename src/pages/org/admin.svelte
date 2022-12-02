@@ -278,26 +278,6 @@
     return organizationUser.isUser(id);
   }
 
-  function hasPageUp(l: any) {
-    if (l != null && typeof l.pager == "object") {
-      const p: any = l.pager;
-      return p.offset > 0;
-    }
-
-    return false;
-  }
-
-  function hasPageDown(l: any) {
-    if (l != null && typeof l.pager == "object") {
-      const p: any = l.pager;
-      const last: number = p.offset + p.count;
-      return last < p.countAll;
-    }
-
-    return false;
-  }
-
-  // START: SINGLE FIELD LIST - Users //
   function actionsMessageModal(type: string) {
     switch (type) {
       case "delete-user":
