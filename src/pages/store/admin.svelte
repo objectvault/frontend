@@ -253,6 +253,7 @@
     }
   }
 
+  // START: SINGLE FIELD LIST - Users //
   function entryActionsUsersList(entry: StoreUser): TAction[] {
     /* CONDITIONS:
      * IS SELF : Read Only (Can't Edit)
@@ -272,13 +273,13 @@
         },
         label: "Roles",
         tooltip: self ? "View My Permissions" : "Modify User Permissions",
-        display: () =>
+        display: (a: TAction, e: StoreUser) =>
           storeUser
             .roles()
             .hasRole(
               apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_ROLES,
               apiRoles.FUNCTION_READ
-            ) && entry.roles() != null,
+            ) && e.roles() != null,
       },
       {
         id: "user.delete",
@@ -295,13 +296,13 @@
             },
           };
         },
-        display: () =>
+        display: (a: TAction, e: StoreUser) =>
           storeUser
             .roles()
             .hasRole(
               apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_DELETE
-            ) && !self,
+            ) && !storeUser.isUser(e.user()),
         label: "Delete",
         tooltip: "Remove User from Store",
       },
@@ -346,7 +347,9 @@
     };
     return l;
   }
+  // END: SINGLE FIELD LIST - Users //
 
+  // START: SINGLE FIELD LIST - Invitations //
   function entryActionsInvitationsList(entry: any): TAction[] {
     return [
       {
@@ -423,7 +426,9 @@
     };
     return l;
   }
+  // END: SINGLE FIELD LIST - Invitations //
 
+  // START: SINGLE FIELD LIST - Templates //
   async function templateListLoader(l: TModelStateList): Promise<any> {
     const fv: string = l.filter.get();
     const filter: string = fv.length ? `contains(name, "${fv}")` : null;
@@ -551,6 +556,7 @@
     l.loader = (): Promise<any> => templateListLoader(l);
     return l;
   }
+  // END: SINGLE FIELD LIST - Templates //
 
   async function loadStore(id: string): Promise<Store> {
     try {
