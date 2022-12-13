@@ -29,7 +29,8 @@
   // Developer Libraries //
   import EventEmitter from "../../api/event-emitter";
   import type { User } from "../../classes/user";
-  import type { Roles } from "../../classes/roles";
+  import type { Role, Roles } from "../../classes/roles";
+  import { Invitation } from "../../classes/invitation";
   import { Store } from "../../classes/store";
   import { StoreUser } from "../../classes/store-user";
   import type { TAction } from "../../objects/actions";
@@ -47,16 +48,14 @@
   import ModalForm from "../../components/modal-form.svelte";
   import ModalMessage from "../../components/modal-message.svelte";
 
-  // Component Paramters //
+  // Component Parameters //
   export let params: any = {}; // IN: Router - Route Parameters
 
-  // COMPONENT Bindable Paramters//
+  // COMPONENT Bindable Parameters//
   let spinner: boolean = true;
   let user: User = null; // Session User
   let store: Store = null; // Store Profile
   let storeUser: StoreUser = null; // Registry: Store Session User Registry
-  let listOfInvitations: any = null; // List of Pending User Invitations
-  let invitations: any[] = []; // Invitations Array
 
   // Message Modal //
   let oModalMessage: any = null;
@@ -132,6 +131,7 @@
   async function onSubmitModifyUserRoles(e: CustomEvent) {
     const d: any = e.detail;
     const updatedRoles: Roles = d.updateRoles;
+    const deletedRoles: Roles = d.deleteRoles;
 
     // Entry Roles (SOURCE)
     const me: StoreUser = roleModifyEntry;
@@ -139,9 +139,15 @@
     console.info(s.export());
     if (updatedRoles != null && !updatedRoles.isEmpty()) {
       console.info(updatedRoles.export());
-      s.merge(updatedRoles);
-      console.info(s.export());
+      console.info(deletedRoles.export());
 
+      // Apply Updates
+      s.merge(updatedRoles);
+
+      // Remove Deleted Roles
+      deletedRoles.forEach((r: Role) => s.del(r.category()));
+
+      console.info(s.export());
       try {
         let m: any = await apiStore.users.roles.set(
           me.store(),
@@ -250,6 +256,54 @@
             tooltip: "Remove User",
           },
         ];
+      case "remove-invite":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel Removal",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "danger",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Remove User
+                const action: TAction = oModalMessage.params.action;
+                const e: Invitation = oModalMessage.params.entry;
+                console.info(`Clicked [${action.id}] on [${e.invitee()}]`);
+                await apiStore.invites.delete(e.id());
+
+                // User List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(
+                  `Invitation [${e.uid()}] DELETED from Store [${store.name()}]`
+                );
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Remove Invitation",
+          },
+        ];
     }
   }
 
@@ -356,11 +410,11 @@
         id: "invite.resend",
         icon: "arrow-clockwise",
         color: "info",
-        handler: async (a: TAction, entry: any) => {
-          console.info(`Clicked [${a.id}] on [${entry.invitee}]`);
+        handler: async (a: TAction, i: Invitation) => {
+          console.info(`Clicked [${a.id}] on [${i.invitee()}]`);
           try {
-            const i: any = await apiStore.invites.resend(entry.id);
-            console.log(i);
+            const r: any = await apiStore.invites.resend(i.id());
+            console.log(r);
           } catch (e) {
             console.error(e);
           }
@@ -370,10 +424,26 @@
       },
       {
         id: "invite.delete",
-        icon: "dash-circle",
+        icon: "trash",
         color: "danger",
-        handler: async (a: TAction, entry: any) =>
-          console.info(`Clicked [${a.id}] on [${entry.id}]`),
+        handler: async (a: TAction, i: Invitation) => {
+          oModalMessage = {
+            title: "Delete Invitation",
+            message: `Delete Store Invitation for [${i.invitee()}]?`,
+            type: "remove-invite",
+            params: {
+              action: a,
+              entry: i,
+            },
+          };
+        },
+        display: (a: TAction, i: Invitation) =>
+          storeUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_INVITE,
+              apiRoles.FUNCTION_DELETE
+            ),
         label: "Delete",
         tooltip: "Delete Invitation",
       },
@@ -417,12 +487,18 @@
     // Create Loader
     l.loader = async (): Promise<any> => {
       let fv: string = l.filter.get();
+      let list: any = null;
       if (fv.length) {
         const filter: string = `contains(invitee, "${fv}")`;
-        return apiStore.invites.list(store, { filter });
+        list = await apiStore.invites.list(store, { filter });
       } else {
-        return apiStore.invites.list(store);
+        list = await apiStore.invites.list(store);
       }
+
+      // Map List Items
+      list.items = list.items.map((i: any) => new Invitation(i));
+
+      return list;
     };
     return l;
   }
@@ -445,7 +521,7 @@
     // Display Template State
     l.displayState = true;
 
-    // Get Intenal Reprentation
+    // Get Internal Representation
     const _internal: any = l._internal;
 
     // Save Pager from Parent List

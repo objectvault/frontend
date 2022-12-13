@@ -39,10 +39,10 @@
 
   // NOTE: Organization READ Role (33882113) is REQUIRED and HIDDEN in invitation
   let updatedRoles: Roles = new Roles();
-
-  let bFormInvalid: boolean = false;
+  let deletedRoles: Roles = new Roles();
 
   let classes: string = "";
+  let bFormModified: boolean = false;
   let buttonColor: string = "primary";
 
   // OBSERVERS //
@@ -53,10 +53,7 @@
   );
 
   // Submit Button Color
-  $: buttonColor = bFormInvalid ? "primary" : "success";
-
-  // Calculate Form Valid State
-  $: bFormInvalid = updatedRoles.isEmpty();
+  $: buttonColor = !bFormModified ? "primary" : "success";
 
   // Helpers //
   function csvRolesToManagerList(r: Roles): any {
@@ -270,51 +267,49 @@
   function onUpdateRoles(e: CustomEvent) {
     const v: number = e.detail.value;
     const r: Role = new Role(v);
+    const c: number = r.category();
 
-    const existing: Role = roles.get(r.category());
-    const update: Role = updatedRoles.get(r.category());
+    const existing: Role = roles.get(c);
 
-    // New update?
-    if (update === null) {
-      // YES: Has update modified existing role
-      if (existing !== null && existing.isEqual(update)) {
-        // NO: Skip
-        return;
+    // Does Modified Role Contain any Functions?
+    if (r.functions() === 0) {
+      // NO: Deleting Role
+      updatedRoles.del(c);
+
+      // Does Role Exist?
+      if (existing) {
+        // YES: Mark it for Delete
+        deletedRoles.add(existing);
       }
 
-      updatedRoles = updatedRoles.add(r);
-      return;
-    }
-    // ELSE: Update to Update
-
-    // Has Update Changed?
-    if (update.isEqual(r)) {
-      // NO: Ignore
+      // Calculate Form Valid State
+      bFormModified = !updatedRoles.isEmpty() || !deletedRoles.isEmpty();
       return;
     }
 
-    // Any Existing Role Functions?
-    if (existing === null) {
-      // NO: Update Has any Function?
-      if (r.functions() !== 0) {
-        // YES: Update
-        updatedRoles = updatedRoles.add(r);
+    // Modifying Existing Role?
+    if (existing !== null) {
+      // YES: Has update modified existing role?
+      if (existing.isEqual(r)) {
+        // NO: Clear Existing Changes
+        updatedRoles.del(c);
+        deletedRoles.del(c);
       } else {
-        // NO: Delete Entry
-        updatedRoles = updatedRoles.del(r.category());
+        // YES: Modify Update
+        updatedRoles.add(r);
+        deletedRoles.del(c);
       }
+
+      // Calculate Form Valid State
+      bFormModified = !updatedRoles.isEmpty() || !deletedRoles.isEmpty();
       return;
     }
+    //ELSE: No Existing Role: Update Changes
+    updatedRoles.add(r);
+    deletedRoles.del(c);
 
-    // Is update a reset?
-    if (existing.isEqual(r)) {
-      // YES
-      updatedRoles = updatedRoles.del(r.category());
-      return;
-    }
-
-    updatedRoles = updatedRoles.add(update);
-    console.log(e);
+    // Calculate Form Valid State
+    bFormModified = !updatedRoles.isEmpty() || !deletedRoles.isEmpty();
   }
 
   function onSubmitForm(e: Event) {
@@ -325,6 +320,7 @@
     dispatch("formSubmit", {
       roles: roles,
       updateRoles: updatedRoles,
+      deleteRoles: deletedRoles,
     });
   }
 
@@ -344,8 +340,11 @@
   />
   {#if !readOnly}
     <hr />
-    <Button type="submit" color="primary" class="w-100" disabled={bFormInvalid}
-      >Modify</Button
+    <Button
+      type="submit"
+      color={buttonColor}
+      class="w-100"
+      disabled={!bFormModified}>Modify</Button
     >
   {/if}
 </Form>

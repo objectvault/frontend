@@ -58,15 +58,15 @@
   import ObjectEditor from "../../components/store/object/editor.svelte";
   import ModalMessage from "../../components/modal-message.svelte";
 
-  // Component Paramters //
+  // Component Parameters //
   export let params: any = {}; // IN: Router - Route Parameters
 
-  // COMPONENT Bindable Paramters//
+  // COMPONENT Bindable Parameters//
   let spinner: boolean = true;
   let store: Store = null; // Store Profile
   let storeUser: StoreUser = null; // Registry: Store Session User Registry
   let user: User = null;
-  let listOftemplates: string[] = []; // List of Templates in Store Returned from API
+  let listOfTemplates: string[] = []; // List of Templates in Store Returned from API
   let templates: any[] = []; // List of Templates in Store
 
   // Message Modal //
@@ -578,7 +578,7 @@
       storeUser = await loadStoreUser(id, user.id());
 
       // Load List of Store Templates
-      listOftemplates = await reloadTemplates(id);
+      listOfTemplates = await reloadTemplates(id);
       spinner = false;
       return true;
     } catch (e) {

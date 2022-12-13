@@ -241,6 +241,11 @@ export class Roles {
     return this;
   }
 
+  public forEach(callback: any): Roles {
+    this._roles.forEach((v: Role) => callback(v));
+    return this;
+  }
+
   private _import(csv: string): Map<number, Role> {
     const roles: Role[] = csv
       .split(",") // Explode String

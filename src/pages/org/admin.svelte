@@ -30,7 +30,7 @@
   import utilities from "../../api/utilities";
   import EventEmitter from "../../api/event-emitter";
   import { User } from "../../classes/user";
-  import type { Roles } from "../../classes/roles";
+  import type { Role, Roles } from "../../classes/roles";
   import { Organization } from "../../classes/organization";
   import { OrganizationUser } from "../../classes/organization-user";
   import { OrganizationStore } from "../../classes/organization-store";
@@ -143,6 +143,7 @@
   async function onSubmitModifyUserRoles(e: CustomEvent) {
     const d: any = e.detail;
     const updatedRoles: Roles = d.updateRoles;
+    const deletedRoles: Roles = d.deleteRoles;
 
     // Entry Roles (SOURCE)
     const me: OrganizationUser = roleModifyEntry;
@@ -150,9 +151,15 @@
     console.info(s.export());
     if (updatedRoles != null && !updatedRoles.isEmpty()) {
       console.info(updatedRoles.export());
-      s.merge(updatedRoles);
-      console.info(s.export());
+      console.info(deletedRoles.export());
 
+      // Apply Updates
+      s.merge(updatedRoles);
+
+      // Remove Deleted Roles
+      deletedRoles.forEach((r: Role) => s.del(r.category()));
+
+      console.info(s.export());
       try {
         let m: any = await apiOrgUser.roles.set(
           me.organization(),
@@ -618,7 +625,7 @@
     // Display Template State
     l.displayState = !organization.isSystem();
 
-    // Get Intenal Reprentation
+    // Get Internal Representation
     const _internal: any = l._internal;
 
     // Save Pager from Parent List
