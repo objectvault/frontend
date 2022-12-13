@@ -31,6 +31,7 @@
   import EventEmitter from "../../api/event-emitter";
   import { User } from "../../classes/user";
   import type { Role, Roles } from "../../classes/roles";
+  import { Invitation } from "../../classes/invitation";
   import { Organization } from "../../classes/organization";
   import { OrganizationUser } from "../../classes/organization-user";
   import { OrganizationStore } from "../../classes/organization-store";
@@ -333,6 +334,54 @@
             tooltip: "Delete User",
           },
         ];
+      case "remove-invite":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel Removal",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "danger",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Remove User
+                const action: TAction = oModalMessage.params.action;
+                const e: Invitation = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.invitee()}]`);
+                await apiOrg.invites.delete(e.id());
+
+                // User List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(
+                  `Invitation [${e.uid()}] DELETED from Store [${organization.name()}]`
+                );
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Remove Invitation",
+          },
+        ];
       case "delete-org":
         return [
           {
@@ -557,10 +606,26 @@
       },
       {
         id: "invite.delete",
-        icon: "trash",
+        icon: "dash-circle",
         color: "danger",
-        handler: (a: TAction, entry: any) =>
-          console.info(`Clicked [${a.id}] on [${entry.invitee}]`),
+        handler: async (a: TAction, i: Invitation) => {
+          oModalMessage = {
+            title: "Delete Invitation",
+            message: `Delete Organization Invitation for [${i.invitee()}]?`,
+            type: "remove-invite",
+            params: {
+              action: a,
+              entry: i,
+            },
+          };
+        },
+        display: (a: TAction, i: Invitation) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_INVITE,
+              apiRoles.FUNCTION_DELETE
+            ),
         label: "Delete",
         tooltip: "Delete Invitation",
       },
@@ -587,14 +652,18 @@
     // Create Loader
     l.loader = async (): Promise<any> => {
       let fv: string = l.filter.get();
+      let list: any = null;
       if (fv.length) {
         const filter: string = `contains(invitee, "${fv}")`;
-        return apiOrg.invites.list(org, {
-          filter,
-        });
+        list = await apiOrg.invites.list(org, { filter });
       } else {
-        return apiOrg.invites.list(org);
+        list = await apiOrg.invites.list(org);
       }
+
+      // Map List Items
+      list.items = list.items.map((i: any) => new Invitation(i));
+
+      return list;
     };
     return l;
   }

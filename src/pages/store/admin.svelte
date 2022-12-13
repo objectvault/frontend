@@ -424,7 +424,7 @@
       },
       {
         id: "invite.delete",
-        icon: "trash",
+        icon: "dash-circle",
         color: "danger",
         handler: async (a: TAction, i: Invitation) => {
           oModalMessage = {
