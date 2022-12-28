@@ -30,10 +30,10 @@
   import Overlay from "../components/overlay.svelte";
   import Spinner from "../components/spinner.svelte";
 
-  // Component Paramters //
+  // Component Parameters //
   export const params: any = null; // IN: Router - Route Parameters
 
-  // COMPONENT Bindable Paramters //
+  // COMPONENT Bindable Parameters //
   let showSpinner: boolean = true; // DISPLAY: Spinner
   let user: any = null; // Session User
 
