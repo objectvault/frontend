@@ -9,10 +9,17 @@
    * along with this program.  If not, see <https://www.gnu.org/licenses/>.
    */
 
+  /* START.CHECKS */
+  import du from "../../../dev-utils";
+
+  // Other Libraries used in checks
+  import _ from "lodash";
+  /* END.CHECKS */
+
   // SVELTE API //
   import { onMount, createEventDispatcher } from "svelte";
 
-  // SVELTESTAP
+  // SVELTESTRAP
   import { Button, Icon, Input, InputGroup, InputGroupText } from "sveltestrap";
 
   // Application COMPONENTS //
@@ -27,7 +34,7 @@
 
   // CONSTANTS
   const defaults: any = {
-    // DEFAULTS Settings for fields that alias this Field Componet
+    // DEFAULTS Settings for fields that alias this Field Component
     password: {
       settings: {
         confirmation: true,
@@ -35,6 +42,40 @@
       },
     },
   };
+
+  // Independent Timeout Counters
+  const timeouts: any = {
+    input: null,
+    eye: null,
+    clipboard: null,
+    get: (id: string) => (timeouts.hasOwnProperty(id) ? timeouts[id] : null),
+    set: (id: string, callback: any, timeout: number) => {
+      /* START.CHECKS */
+      !(id == null || typeof id === "string") &&
+        du.throwMessage('"id" is supposed to be a string.');
+      !(callback == null || _.isFunction(callback)) &&
+        du.throwMessage('"callback" missing or invalid.');
+      !(timeout == null || typeof timeout === "number" || timeout > 100) &&
+        du.throwMessage('"timeout" missing or invalid.');
+      /* END.CHECKS */
+
+      if (timeouts.hasOwnProperty(id)) {
+        if (timeouts[id]) {
+          clearTimeout(timeouts[id]);
+        }
+
+        timeouts[id] = setTimeout(() => callback(), timeout);
+      }
+    },
+    clear: (id: string) => {
+      if (timeouts.hasOwnProperty(id) && timeouts[id]) {
+        clearTimeout(timeouts[id]);
+      }
+    },
+  };
+
+  // Timeout for Action Buttons (Eye and Clipboard) - 15 seconds
+  const buttonTimeout: number = 15000;
 
   // SPECIAL EXPORT - Treat classes as class attribute
   let classes: string = null;
@@ -53,7 +94,6 @@
   let inputValue: string = value == null ? "" : value; // Current Bound Value for INPUT
   let outputValue: string | null = inputValue; // Current Validated Value
   let outputValid: boolean = isValid;
-  let timeoutID: number | null = null;
 
   // OBSERVERS
   $: _template = new EnhancedFieldTemplate(template, defaults[template.type()]);
@@ -66,6 +106,15 @@
   function onToggleShow(e: Event) {
     e.preventDefault(); // NEEDED: Clicking on Button Closes Dialog
     bShowText = !bShowText;
+
+    // Hide Text after 15 Seconds
+    if (mode == "read") {
+      if (bShowText) {
+        timeouts.set("eye", () => (bShowText = false), buttonTimeout);
+      } else {
+        timeouts.clear("eye");
+      }
+    }
   }
 
   function onChangeValue(e: InputEvent) {
@@ -77,6 +126,29 @@
     const t: any = e.target as any;
     if (t.value !== outputValue) {
       t.value = inputValue = outputValue;
+    }
+  }
+
+  async function doCopyToClipboard(e: Event) {
+    try {
+      // Copy Field Value to clipboard
+      await navigator.clipboard.writeText(inputValue);
+
+      // Clear Clipboard after 15 Seconds
+      timeouts.set(
+        "clipboard",
+        async () => {
+          try {
+            await navigator.clipboard.writeText("--");
+          } catch (e) {
+            console.info("Could not clear clipboard");
+          }
+        },
+        buttonTimeout
+      );
+      console.info("Copy to Clipboard");
+    } catch (e: any) {
+      console.error(e);
     }
   }
 
@@ -170,17 +242,17 @@
   function applyTransforms(v: string): string {
     // NOTE: Transforms have an Order to be Applied
     if (v.length) {
-      // transfomation[trim] == true?
+      // transformation[trim] == true?
       if (_template.transform("trim", false)) {
         // YES: trim string
         v = v.trim();
       } else {
-        // transfomation[trim] == true?
+        // transformation[trim] == true?
         if (_template.transform("trim-start", false)) {
           v = utilities.strings.trimStart(v);
         }
 
-        // transfomation[trim] == true?
+        // transformation[trim] == true?
         if (_template.transform("trim-end", false)) {
           v = utilities.strings.trimEnd(v);
         }
@@ -188,7 +260,7 @@
     }
 
     if (v.length) {
-      // transfomation[case]
+      // transformation[case]
       switch (_template.transform("case", null)) {
         case "upper":
           v.toUpperCase();
@@ -232,7 +304,10 @@
   }
 
   function handleValueChange(v: string) {
-    // Have Pending Value Change
+    // Clear Pending Value Changes
+    timeouts.set("input", () => processValueChange(v), timeout);
+
+    /*
     if (timeoutID != null) {
       //Y ES: Clear it
       clearTimeout(timeoutID);
@@ -244,6 +319,7 @@
       // NO: Process on Delay
       timeoutID = setTimeout(() => processValueChange(v), timeout);
     }
+    */
   }
 
   // SVELTE LifeCycle
@@ -266,20 +342,38 @@
       on:blur={onUpdateInputValue}
       {..._props}
     />
+    {#if _template.setting("eye", true)}
+      <Button
+        class="col-auto input-group-text"
+        tabindex={-1}
+        on:click={onToggleShow}
+      >
+        <Icon name="eye" />
+      </Button>
+    {/if}
   {:else}
     <Input
       type={bShowText ? "text" : "password"}
       value={inputValue}
       disabled={true}
     />
-  {/if}
-  {#if _template.setting("eye", true)}
-    <Button
-      class="col-auto input-group-text"
-      tabindex={-1}
-      on:click={onToggleShow}
-    >
-      <Icon name="eye" />
-    </Button>
+    {#if _template.setting("eye", true)}
+      <Button
+        class="col-auto input-group-text"
+        tabindex={-1}
+        on:click={onToggleShow}
+      >
+        <Icon name="eye" />
+      </Button>
+    {/if}
+    {#if _template.setting("clipboard", false)}
+      <Button
+        class="col-auto input-group-text"
+        tabindex={-1}
+        on:click={doCopyToClipboard}
+      >
+        <Icon name="clipboard" />
+      </Button>
+    {/if}
   {/if}
 </InputGroup>
