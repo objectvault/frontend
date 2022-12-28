@@ -16,8 +16,8 @@
   // SVELTE API //
   import { onMount, createEventDispatcher, tick } from "svelte";
 
-  // SVELTESTAP
-  import { Input, InputGroup, InputGroupText } from "sveltestrap";
+  // SVELTESTRAP
+  import { Button, Icon, Input, InputGroup, InputGroupText } from "sveltestrap";
 
   // Application COMPONENTS //
   import type { FieldTemplate } from "../../../classes/form-template";
@@ -82,6 +82,16 @@
     const t: any = e.target as any;
     if (t.value !== outputValue) {
       t.value = inputValue = outputValue;
+    }
+  }
+
+  async function doCopyToClipboard(e: Event) {
+    try {
+      // Copy Field Value to clipboard
+      await navigator.clipboard.writeText(inputValue);
+      console.log("Copy to Clipboard");
+    } catch (e: any) {
+      console.error(e);
     }
   }
 
@@ -316,5 +326,14 @@
     />
   {:else}
     <Input type="text" value={inputValue} disabled={true} />
+    {#if _template.setting("clipboard", false)}
+      <Button
+        class="col-auto input-group-text"
+        tabindex={-1}
+        on:click={doCopyToClipboard}
+      >
+        <Icon name="clipboard" />
+      </Button>
+    {/if}
   {/if}
 </InputGroup>
