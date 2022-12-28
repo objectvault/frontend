@@ -123,10 +123,9 @@
   }
 
   function onUpdateInputValue(e: Event) {
-    const t: any = e.target as any;
-    if (t.value !== outputValue) {
-      t.value = inputValue = outputValue;
-    }
+    // BLUR (Focus Changed)
+    let v: string = (e.target as any).value;
+    handleValueChange(v, true);
   }
 
   async function doCopyToClipboard(e: Event) {
@@ -303,9 +302,16 @@
     }
   }
 
-  function handleValueChange(v: string) {
-    // Clear Pending Value Changes
-    timeouts.set("input", () => processValueChange(v), timeout);
+  function handleValueChange(v: string, force = false) {
+    // Process Immediately?
+    if (!force) {
+      // NO: (Re)Set Processing Timeout
+      timeouts.set("input", () => processValueChange(v), timeout);
+    } else {
+      // YES: Clear any timers and process
+      timeouts.clear("input");
+      processValueChange(v);
+    }
 
     /*
     if (timeoutID != null) {

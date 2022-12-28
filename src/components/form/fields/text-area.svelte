@@ -77,10 +77,9 @@
   }
 
   function onUpdateInputValue(e: Event) {
-    const t: any = e.target as any;
-    if (t.value !== outputValue) {
-      t.value = inputValue = outputValue;
-    }
+    // BLUR (Focus Changed)
+    let v: string = (e.target as any).value;
+    handleValueChange(v, true);
   }
 
   // HELPERS //
@@ -234,7 +233,7 @@
     }
   }
 
-  function handleValueChange(v: string) {
+  function handleValueChange(v: string, force = false) {
     // Have Pending Value Change
     if (timeoutID != null) {
       //Y ES: Clear it
@@ -242,10 +241,13 @@
       timeoutID = null;
     }
 
-    // Have Pending Value Change
-    if (timeoutID === null) {
-      // NO: Process on Delay
+    // Process Immediately?
+    if (!force) {
+      // NO: (Re)Set Processing Timeout
       timeoutID = setTimeout(() => processValueChange(v), timeout);
+    } else {
+      // YES: Process Immediately
+      processValueChange(v);
     }
   }
 

@@ -79,10 +79,9 @@
   }
 
   function onUpdateInputValue(e: Event) {
-    const t: any = e.target as any;
-    if (t.value !== outputValue) {
-      t.value = inputValue = outputValue;
-    }
+    // BLUR (Focus Changed)
+    let v: string = (e.target as any).value;
+    handleValueChange(v, true);
   }
 
   async function doCopyToClipboard(e: Event) {
@@ -185,17 +184,17 @@
   function applyTransforms(v: string): string {
     // NOTE: Transforms have an Order to be Applied
     if (v.length) {
-      // transfomation[trim] == true?
+      // transformation[trim] == true?
       if (_template.transform("trim", false)) {
         // YES: trim string
         v = v.trim();
       } else {
-        // transfomation[trim] == true?
+        // transformation[trim] == true?
         if (_template.transform("trim-start", false)) {
           v = utilities.strings.trimStart(v);
         }
 
-        // transfomation[trim] == true?
+        // transformation[trim] == true?
         if (_template.transform("trim-end", false)) {
           v = utilities.strings.trimEnd(v);
         }
@@ -208,7 +207,7 @@
         v = singleSpaceBetween(v);
       }
 
-      // transfomation[case]
+      // transformation[case]
       switch (_template.transform("case", null)) {
         case "upper":
           v.toUpperCase();
@@ -251,7 +250,7 @@
     }
   }
 
-  function handleValueChange(v: string) {
+  function handleValueChange(v: string, force = false) {
     // Have Pending Value Change
     if (timeoutID != null) {
       //Y ES: Clear it
@@ -259,10 +258,13 @@
       timeoutID = null;
     }
 
-    // Have Pending Value Change
-    if (timeoutID === null) {
-      // NO: Process on Delay
+    // Process Immediately?
+    if (!force) {
+      // NO: (Re)Set Processing Timeout
       timeoutID = setTimeout(() => processValueChange(v), timeout);
+    } else {
+      // YES: Process Immediately
+      processValueChange(v);
     }
   }
 
