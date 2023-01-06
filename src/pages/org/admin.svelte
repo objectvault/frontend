@@ -416,7 +416,7 @@
                   await refresh();
                 }
 
-                console.log(`Oganization [${e.name()}] DELETED`);
+                console.log(`Organization [${e.name()}] DELETED`);
 
                 // Hide Modal
                 oModalMessage = null;
@@ -592,11 +592,11 @@
         id: "invite.resend",
         icon: "arrow-clockwise",
         color: "info",
-        handler: async (a: TAction, entry: any) => {
-          console.info(`Clicked [${a.id}] on [${entry.invitee}]`);
+        handler: async (a: TAction, i: Invitation) => {
+          console.info(`Clicked [${a.id}] on [${i.invitee()}]`);
           try {
-            const i: any = await apiOrg.invites.resend(entry.id);
-            console.log(i);
+            const r: any = await apiOrg.invites.resend(i.id());
+            console.log(r);
           } catch (e) {
             console.error(e);
           }
