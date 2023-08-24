@@ -50,9 +50,65 @@ async function listUsers(params?: any): Promise<any> {
   }
 }
 
-async function deleteUser(id: string): Promise<any> {
+async function deleteUser(uid: string): Promise<any> {
   try {
-    throw new Error("TODO: IMPLEMENT");
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/system/user/${uid}`;
+
+    // Request
+    const response: any = await ws_client().delete(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function setUserBlockState(uid: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/system/user/${uid}/block/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
   } catch (e) {
     throw e;
   }
@@ -60,5 +116,7 @@ async function deleteUser(id: string): Promise<any> {
 
 export default {
   list: listUsers,
-  delete: deleteUser
+  delete: deleteUser,
+  block: (uid: string) => setUserBlockState(uid, true),
+  unblock: (uid: string) => setUserBlockState(uid, false)
 }

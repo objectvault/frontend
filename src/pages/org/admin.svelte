@@ -25,6 +25,7 @@
   import apiOrgUser from "../../api/org/org-user";
   import apiRoles from "../../api/roles";
   import apiSystem from "../../api/system";
+  import ObjectState from "../../api/states";
 
   // Developer Libraries //
   import utilities from "../../api/utilities";
@@ -310,7 +311,7 @@
             },
             handler: async (a: TAction) => {
               try {
-                // Remove Organization
+                // Try Delete User from System
                 const action: TAction = oModalMessage.params.action;
                 const e: User = oModalMessage.params.entry;
                 console.info(`Clicked [${a.id}] on [${e.name()}]`);
@@ -322,7 +323,53 @@
                   await refresh();
                 }
 
-                console.log(`User [${e.name()}] DELETED`);
+                console.log(`User [${e.name()}] Being Deleted`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Delete User",
+          },
+        ];
+      case "block-user":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block User from System
+                const action: TAction = oModalMessage.params.action;
+                const e: User = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.name()}]`);
+                await apiSystem.users.block(e.id());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`User [${e.name()}] Blocked`);
 
                 // Hide Modal
                 oModalMessage = null;
@@ -474,6 +521,20 @@
               }
             },
             tooltip: "Delete Store",
+          },
+        ];
+      default:
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
           },
         ];
     }
@@ -1014,6 +1075,72 @@
   function sflAllUsersEntryActions(entry: any): TAction[] {
     return [
       {
+        id: "user.unblock",
+        icon: "check-circle",
+        color: "success",
+        handler: async (a: TAction, e: User) => {
+          try {
+            // Unblock User from System
+            console.info(`Clicked [${a.id}] on [${e.name()}]`);
+            await apiSystem.users.unblock(e.id());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`User [${e.name()}] Unblocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: User) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !organizationUser.isUser(e.id()) &&
+          (e.state() & ObjectState.STATE_BLOCKED) != 0,
+        label: "Unblock",
+        tooltip: "Unblock User",
+        disabled: (a: TAction, e: User) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
+      },
+      {
+        id: "user.block",
+        icon: "check-circle",
+        color: "warning",
+        handler: (a: TAction, e: User) => {
+          oModalMessage = {
+            title: "Block User",
+            message: `Block User Access [${e.name()}]?`,
+            type: "block-user",
+            params: {
+              action: a,
+              entry: e,
+            },
+          };
+        },
+        display: (a: TAction, e: User) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !organizationUser.isUser(e.id()) &&
+          (e.state() & ObjectState.STATE_BLOCKED) == 0,
+        label: "Block",
+        tooltip: "Block User",
+      },
+      {
         id: "user.delete",
         icon: "trash",
         color: "danger",
@@ -1034,7 +1161,9 @@
             .hasRole(
               apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_DELETE
-            ) && !organizationUser.isUser(e.id()),
+            ) &&
+          !organizationUser.isUser(e.id()) &&
+          (e.state() & ObjectState.STATE_DELETE) == 0,
         label: "Delete",
         tooltip: "Delete User",
       },
