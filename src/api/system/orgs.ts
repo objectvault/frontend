@@ -83,7 +83,108 @@ async function createOrganization(org: any): Promise<any> {
   }
 }
 
+async function deleteOrg(uid: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/system/org/${uid}`;
+
+    // Request
+    const response: any = await ws_client().delete(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function setOrgBlockState(uid: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/system/org/${uid}/block/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function setOrgLockState(uid: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/system/org/${uid}/lock/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
 export default {
   list: listOrganizations,
-  create: createOrganization
+  create: createOrganization,
+  delete: deleteOrg,
+  block: (uid: string) => setOrgBlockState(uid, true),
+  unblock: (uid: string) => setOrgBlockState(uid, false),
+  lock: (uid: string) => setOrgLockState(uid, true),
+  unlock: (uid: string) => setOrgLockState(uid, false)
 }

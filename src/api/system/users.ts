@@ -114,9 +114,43 @@ async function setUserBlockState(uid: string, state: boolean): Promise<any> {
   }
 }
 
+async function setUserLockState(uid: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/system/user/${uid}/lock/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
 export default {
   list: listUsers,
   delete: deleteUser,
   block: (uid: string) => setUserBlockState(uid, true),
-  unblock: (uid: string) => setUserBlockState(uid, false)
+  unblock: (uid: string) => setUserBlockState(uid, false),
+  lock: (uid: string) => setUserLockState(uid, true),
+  unlock: (uid: string) => setUserLockState(uid, false)
 }

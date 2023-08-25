@@ -50,17 +50,9 @@ async function getOrgProfile(org: string): Promise<any> {
   }
 }
 
-async function deleteOrg(org: string): Promise<any> {
-  try {
-    throw new Error("TODO: IMPLEMENT");
-  } catch (e) {
-    throw e;
-  }
-}
 
 export default {
   get: getOrgProfile,
-  delete: deleteOrg,
   invites,
   state,
   stores,

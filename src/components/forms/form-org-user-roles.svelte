@@ -114,6 +114,15 @@
         ),
       },
       {
+        id: "org",
+        label: "Orgs",
+        icon: "building",
+        value: apiRoles.extractRole(
+          apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG,
+          roles
+        ),
+      },
+      {
         id: "roles",
         label: "Roles",
         icon: "lock",
@@ -170,6 +179,10 @@
           apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
           roles
         ),
+        fixed:
+          apiRoles.FUNCTION_READ_LIST |
+          apiRoles.FUNCTION_CREATE |
+          apiRoles.FUNCTION_DELETE,
       },
       {
         id: "templates",
@@ -228,6 +241,10 @@
           apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
           roles
         ),
+        fixed:
+          apiRoles.FUNCTION_READ_LIST |
+          apiRoles.FUNCTION_CREATE |
+          apiRoles.FUNCTION_DELETE,
       },
       {
         id: "store",

@@ -335,12 +335,58 @@
             tooltip: "Delete User",
           },
         ];
+      case "lock-user":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "warning",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block User from System
+                const action: TAction = oModalMessage.params.action;
+                const e: User = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.name()}]`);
+                await apiSystem.users.lock(e.id());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`User [${e.name()}] Locked`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Lock User",
+          },
+        ];
       case "block-user":
         return [
           {
             id: "__close",
             label: "No",
-            color: "success",
+            color: "warning",
             display: () => false,
             handler: (a: TAction) => {
               console.info(`Clicked [${a.id}]`);
@@ -378,7 +424,7 @@
                 arModalMessages = [e.toString()];
               }
             },
-            tooltip: "Delete User",
+            tooltip: "Block User",
           },
         ];
       case "remove-invite":
@@ -455,7 +501,7 @@
                 const action: TAction = oModalMessage.params.action;
                 const e: Organization = oModalMessage.params.entry;
                 console.info(`Clicked [${a.id}] on [${e.name()}]`);
-                await apiOrg.delete(e.id());
+                await apiSystem.orgs.delete(e.id());
 
                 // List Refresh?
                 const refresh: any = _.get(action, "__reloadList", null);
@@ -463,7 +509,7 @@
                   await refresh();
                 }
 
-                console.log(`Organization [${e.name()}] DELETED`);
+                console.log(`Organization [${e.name()}] Being DELETED`);
 
                 // Hide Modal
                 oModalMessage = null;
@@ -473,6 +519,98 @@
               }
             },
             tooltip: "Delete Organization",
+          },
+        ];
+      case "lock-org":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "warning",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block Organization Modification
+                const action: TAction = oModalMessage.params.action;
+                const e: Organization = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.name()}]`);
+                await apiSystem.orgs.lock(e.id());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`Organization [${e.name()}] Locked`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Lock Organization",
+          },
+        ];
+      case "block-org":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "warning",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block Organization Access
+                const action: TAction = oModalMessage.params.action;
+                const e: Organization = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.name()}]`);
+                await apiSystem.orgs.block(e.id());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`User [${e.name()}] Blocked`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Block Organization",
           },
         ];
       case "delete-store":
@@ -996,27 +1134,161 @@
   function sflAllOrgsEntryActions(entry: any): TAction[] {
     return [
       {
+        id: "org.unlock",
+        icon: "book",
+        color: "warning",
+        handler: async (a: TAction, e: User) => {
+          try {
+            // Unblock User from System
+            console.info(`Clicked [${a.id}] on [${e.name()}]`);
+            await apiSystem.orgs.unlock(e.id());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`Modifications to Organization [${e.name()}] unlocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: Organization) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !e.isSystem() &&
+          (e.state() & ObjectState.STATE_READONLY) != 0,
+        label: "Unlock",
+        tooltip: "Unlock Modifications to Organization",
+        disabled: (a: TAction, e: Organization) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
+      },
+      {
+        id: "org.lock",
+        icon: "book-fill",
+        color: "success",
+        handler: (a: TAction, e: Organization) => {
+          displayMessageModal({
+            title: "Block Changes",
+            message: `Block Modifications to Organization [${e.name()}]?`,
+            type: "lock-org",
+            params: {
+              action: a,
+              entry: e,
+            },
+          });
+        },
+        display: (a: TAction, e: Organization) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !e.isSystem() &&
+          (e.state() & ObjectState.STATE_READONLY) == 0,
+        label: "Block",
+        tooltip: "Block Modifications to Organization",
+      },
+      {
+        id: "org.unblock",
+        icon: "check-circle",
+        color: "warning",
+        handler: async (a: TAction, e: Organization) => {
+          try {
+            // Unblock User from System
+            console.info(`Clicked [${a.id}] on [${e.name()}]`);
+            await apiSystem.orgs.unblock(e.id());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`Access to Organization [${e.name()}] Unblocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: Organization) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !e.isSystem() &&
+          (e.state() & ObjectState.STATE_BLOCKED) != 0,
+        label: "Unblock",
+        tooltip: "Unblock Access to Organization",
+        disabled: (a: TAction, e: Organization) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
+      },
+      {
+        id: "org.block",
+        icon: "check-circle",
+        color: "success",
+        handler: (a: TAction, e: Organization) => {
+          displayMessageModal({
+            title: "Block Access",
+            message: `Block Access to Organization [${e.name()}]?`,
+            type: "block-org",
+            params: {
+              action: a,
+              entry: e,
+            },
+          });
+        },
+        display: (a: TAction, e: Organization) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !e.isSystem() &&
+          (e.state() & ObjectState.STATE_BLOCKED) == 0,
+        label: "Block",
+        tooltip: "Block User",
+      },
+      {
         id: "org.delete",
         icon: "trash",
         color: "danger",
         handler: (a: TAction, e: Organization) => {
-          oModalMessage = {
-            title: "Delete Organization",
+          displayMessageModal({
+            title: "Delete",
             message: `Delete Organization [${e.name()}]?`,
             type: "delete-org",
             params: {
               action: a,
               entry: e,
             },
-          };
+          });
         },
         display: (a: TAction, e: Organization) =>
           organizationUser
             .roles()
             .hasRole(
-              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_ORG,
               apiRoles.FUNCTION_DELETE
             ) && !e.isSystem(),
+        disabled: (a: TAction, e: Organization) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
         label: "Delete",
         tooltip: "Delete Organization",
       },
@@ -1075,9 +1347,75 @@
   function sflAllUsersEntryActions(entry: any): TAction[] {
     return [
       {
+        id: "user.unlock",
+        icon: "book",
+        color: "warning",
+        handler: async (a: TAction, e: User) => {
+          try {
+            // Unblock User from System
+            console.info(`Clicked [${a.id}] on [${e.name()}]`);
+            await apiSystem.users.unlock(e.id());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`User [${e.name()}] unlocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: User) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !organizationUser.isUser(e.id()) &&
+          (e.state() & ObjectState.STATE_READONLY) != 0,
+        label: "Unlock",
+        tooltip: "Unlock User",
+        disabled: (a: TAction, e: User) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
+      },
+      {
+        id: "user.lock",
+        icon: "book-fill",
+        color: "success",
+        handler: (a: TAction, e: User) => {
+          displayMessageModal({
+            title: "Block Changes",
+            message: `Block User Modifications [${e.name()}]?`,
+            type: "lock-user",
+            params: {
+              action: a,
+              entry: e,
+            },
+          });
+        },
+        display: (a: TAction, e: User) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !organizationUser.isUser(e.id()) &&
+          (e.state() & ObjectState.STATE_READONLY) == 0,
+        label: "Block",
+        tooltip: "Block User",
+      },
+      {
         id: "user.unblock",
         icon: "check-circle",
-        color: "success",
+        color: "warning",
         handler: async (a: TAction, e: User) => {
           try {
             // Unblock User from System
@@ -1116,17 +1454,17 @@
       {
         id: "user.block",
         icon: "check-circle",
-        color: "warning",
+        color: "success",
         handler: (a: TAction, e: User) => {
-          oModalMessage = {
-            title: "Block User",
+          displayMessageModal({
+            title: "Block Access",
             message: `Block User Access [${e.name()}]?`,
             type: "block-user",
             params: {
               action: a,
               entry: e,
             },
-          };
+          });
         },
         display: (a: TAction, e: User) =>
           organizationUser
@@ -1145,15 +1483,15 @@
         icon: "trash",
         color: "danger",
         handler: (a: TAction, e: User) => {
-          oModalMessage = {
-            title: "Delete User",
+          displayMessageModal({
+            title: "Delete",
             message: `Delete User [${e.name()}]?`,
             type: "delete-user",
             params: {
               action: a,
               entry: e,
             },
-          };
+          });
         },
         display: (a: TAction, e: User) =>
           organizationUser
@@ -1161,9 +1499,10 @@
             .hasRole(
               apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_DELETE
-            ) &&
-          !organizationUser.isUser(e.id()) &&
-          (e.state() & ObjectState.STATE_DELETE) == 0,
+            ) && !organizationUser.isUser(e.id()),
+        disabled: (a: TAction, e: Organization) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
+
         label: "Delete",
         tooltip: "Delete User",
       },
@@ -1222,6 +1561,14 @@
     const r: any = await apiOrgUser.get(org, user);
     const ou: OrganizationUser = new OrganizationUser(r);
     return ou;
+  }
+
+  function displayMessageModal(options: any) {
+    // Clear any Existing Messages
+    arModalMessages = [];
+
+    // Display Modal with Options
+    oModalMessage = options;
   }
 
   // Page Initialization //

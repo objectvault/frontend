@@ -37,6 +37,10 @@ export class OrganizationUser {
     return id === this._user;
   }
 
+  public isOrganization(id: string): boolean {
+    return id === this._organization;
+  }
+
   public isEqual(o: OrganizationUser, full = false): boolean {
     if ((o == null) || !o.isValid() || !this.isValid()) {
       return false;

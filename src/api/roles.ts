@@ -62,6 +62,7 @@ const mapNoCategoryFunctions: TMapCategoryFunctions = {
   0x0101: 0x0, // SYSTEM: CONF
   0x0102: 0x0, // SYSTEM: USER
   0x0103: 0x0, // SYSTEM: ROLES
+  0x0105: 0x0, // SYSTEM: ORG
   0x0108: 0x0, // SYSTEM: TEMPLATES
   0x0201: 0x0, // ORGANIZATION: CONF
   0x0202: 0x0, // ORGANIZATION: USER
