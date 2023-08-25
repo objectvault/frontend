@@ -147,10 +147,78 @@ async function deleteStore(org: string, store: string): Promise<any> {
   }
 }
 
+async function setStoreBlockState(org: string, store: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/org/${org}/store/${store}/block/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function setStoreLockState(org: string, store: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/org/${org}/store/${store}/lock/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
 
 export default {
   list: getStores,
   get: getStore,
   create: createStore,
-  delete: deleteStore
+  delete: deleteStore,
+  block: (oid: string, sid: string) => setStoreBlockState(oid, sid, true),
+  unblock: (oid: string, sid: string) => setStoreBlockState(oid, sid, false),
+  lock: (oid: string, sid: string) => setStoreLockState(oid, sid, true),
+  unlock: (oid: string, sid: string) => setStoreLockState(oid, sid, false)
+
 }

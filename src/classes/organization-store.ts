@@ -95,7 +95,7 @@ export class OrganizationStore {
 
   private _import(o: any) {
     // Import, if possible, value
-    this._organization = this._extractString(o, 'object', null);
+    this._organization = this._extractString(o, 'organization', null);
     this._store = this._extractString(o, 'store', null);
     this._storename = this._extractString(o, 'alias', null);
     this._state = this._extractNumber(o, 'state', 0);

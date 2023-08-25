@@ -115,14 +115,14 @@ async function deleteOrg(uid: string): Promise<any> {
   }
 }
 
-async function setOrgBlockState(uid: string, state: boolean): Promise<any> {
+async function setOrgBlockState(oid: string, state: boolean): Promise<any> {
   try {
     let options: any = {
       withCredentials: true,
     };
 
     // Request URL
-    let url: string = `/system/org/${uid}/block/${state}`;
+    let url: string = `/system/org/${oid}/block/${state}`;
 
     // Request
     const response: any = await ws_client().put(url, null, options);
@@ -147,14 +147,14 @@ async function setOrgBlockState(uid: string, state: boolean): Promise<any> {
   }
 }
 
-async function setOrgLockState(uid: string, state: boolean): Promise<any> {
+async function setOrgLockState(oid: string, state: boolean): Promise<any> {
   try {
     let options: any = {
       withCredentials: true,
     };
 
     // Request URL
-    let url: string = `/system/org/${uid}/lock/${state}`;
+    let url: string = `/system/org/${oid}/lock/${state}`;
 
     // Request
     const response: any = await ws_client().put(url, null, options);
@@ -183,8 +183,8 @@ export default {
   list: listOrganizations,
   create: createOrganization,
   delete: deleteOrg,
-  block: (uid: string) => setOrgBlockState(uid, true),
-  unblock: (uid: string) => setOrgBlockState(uid, false),
-  lock: (uid: string) => setOrgLockState(uid, true),
-  unlock: (uid: string) => setOrgLockState(uid, false)
+  block: (oid: string) => setOrgBlockState(oid, true),
+  unblock: (oid: string) => setOrgBlockState(oid, false),
+  lock: (oid: string) => setOrgLockState(oid, true),
+  unlock: (oid: string) => setOrgLockState(oid, false)
 }

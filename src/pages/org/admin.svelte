@@ -53,7 +53,7 @@
   import ModalForm from "../../components/modal-form.svelte";
   import ModalMessage from "../../components/modal-message.svelte";
 
-  // Component Paramters //
+  // Component Parameters //
   export let params: any = {}; // IN: Router - Route Parameters
 
   // Component Variables //
@@ -661,6 +661,98 @@
             tooltip: "Delete Store",
           },
         ];
+      case "lock-store":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "warning",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block Store Modification
+                const action: TAction = oModalMessage.params.action;
+                const e: OrganizationStore = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.storename()}]`);
+                await apiOrg.stores.lock(e.organization(), e.store());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`Store [${e.storename()}] Locked`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Lock Store",
+          },
+        ];
+      case "block-store":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "warning",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block Store Access
+                const action: TAction = oModalMessage.params.action;
+                const e: OrganizationStore = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.storename()}]`);
+                await apiOrg.stores.block(e.organization(), e.store());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`Store [${e.storename()}] Blocked`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Block Store",
+          },
+        ];
       default:
         return [
           {
@@ -1035,11 +1127,135 @@
   function sflStoresEntryActions(entry: any): TAction[] {
     return [
       {
+        id: "store.unlock",
+        icon: "book",
+        color: "warning",
+        handler: async (a: TAction, e: OrganizationStore) => {
+          try {
+            // Unlock Store
+            console.info(`Clicked [${a.id}] on [${e.storename()}]`);
+            await apiOrg.stores.unlock(e.organization(), e.store());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`Modifications to Store [${e.storename()}] unlocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: OrganizationStore) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
+              apiRoles.FUNCTION_UPDATE
+            ) && (e.state() & ObjectState.STATE_READONLY) != 0,
+        label: "Unlock",
+        tooltip: "Unlock Modifications to Store",
+        disabled: (a: TAction, e: OrganizationStore) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
+      },
+      {
+        id: "store.lock",
+        icon: "book-fill",
+        color: "success",
+        handler: (a: TAction, e: OrganizationStore) => {
+          displayMessageModal({
+            title: "Block Changes",
+            message: `Block Modifications to Store [${e.storename()}]?`,
+            type: "lock-store",
+            params: {
+              action: a,
+              entry: e,
+            },
+          });
+        },
+        display: (a: TAction, e: OrganizationStore) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
+              apiRoles.FUNCTION_UPDATE
+            ) && (e.state() & ObjectState.STATE_READONLY) == 0,
+        label: "Block",
+        tooltip: "Block Modifications to Store",
+      },
+      {
+        id: "store.unblock",
+        icon: "check-circle",
+        color: "warning",
+        handler: async (a: TAction, e: OrganizationStore) => {
+          try {
+            // Unblock Store
+            console.info(`Clicked [${a.id}] on [${e.storename()}]`);
+            await apiOrg.stores.unblock(e.organization(), e.store());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`Access to Store [${e.storename()}] Unblocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: OrganizationStore) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
+              apiRoles.FUNCTION_UPDATE
+            ) && (e.state() & ObjectState.STATE_BLOCKED) != 0,
+        label: "Unblock",
+        tooltip: "Unblock Access to Store",
+        disabled: (a: TAction, e: OrganizationStore) =>
+          (e.state() & ObjectState.STATE_DELETE) != 0,
+      },
+      {
+        id: "store.block",
+        icon: "check-circle",
+        color: "success",
+        handler: (a: TAction, e: OrganizationStore) => {
+          displayMessageModal({
+            title: "Block Access",
+            message: `Block Access to Store [${e.storename()}]?`,
+            type: "block-store",
+            params: {
+              action: a,
+              entry: e,
+            },
+          });
+        },
+        display: (a: TAction, e: OrganizationStore) =>
+          organizationUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
+              apiRoles.FUNCTION_UPDATE
+            ) && (e.state() & ObjectState.STATE_BLOCKED) == 0,
+        label: "Block",
+        tooltip: "Block Store",
+      },
+      {
         id: "store.delete",
         icon: "trash",
         color: "danger",
         handler: (a: TAction, e: OrganizationStore) => {
-          oModalMessage = {
+          displayMessageModal({
             title: "Delete Store",
             message: `Delete store [${e.storename()}] from Organization?`,
             type: "delete-store",
@@ -1047,7 +1263,7 @@
               action: a,
               entry: e,
             },
-          };
+          });
         },
         display: () =>
           organizationUser
@@ -1137,7 +1353,7 @@
         id: "org.unlock",
         icon: "book",
         color: "warning",
-        handler: async (a: TAction, e: User) => {
+        handler: async (a: TAction, e: Organization) => {
           try {
             // Unblock User from System
             console.info(`Clicked [${a.id}] on [${e.name()}]`);
@@ -1263,7 +1479,7 @@
           !e.isSystem() &&
           (e.state() & ObjectState.STATE_BLOCKED) == 0,
         label: "Block",
-        tooltip: "Block User",
+        tooltip: "Block Organization",
       },
       {
         id: "org.delete",

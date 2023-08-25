@@ -24,7 +24,6 @@
   import _ from "lodash";
 
   // WebServices API Library //
-  import apiMe from "../../api/me";
   import apiOrg from "../../api/org";
   import apiOrgUser from "../../api/org/org-user";
   import apiRoles from "../../api/roles";
@@ -44,7 +43,7 @@
   import SingleFieldExplorer from "../../components/list-single-field.svelte";
   import sflUtilities from "../../objects/single-field-list";
 
-  // Component Paramters //
+  // Component Parameters //
   export let params: any = {}; // IN: Router - Route Parameters
 
   // COMPONENT Bindable Paramters//
@@ -116,8 +115,8 @@
     };
 
     /* TODO: Add Entry Action to Toggle Store as Favorite (or not)
-     * Requires Sinbgle Field Explorer to have Entry Actions with Set State
-     * (i.e. if you change the stae the icon / text changes)
+     * Requires Single Field Explorer to have Entry Actions with Set State
+     * (i.e. if you change the state the icon / text changes)
      */
     // Create Loader
     l.loader = async (): Promise<any> => {
