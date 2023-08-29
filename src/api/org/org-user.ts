@@ -123,6 +123,70 @@ async function setUserRoles(org: string, user: string, roles: string): Promise<s
   }
 }
 
+async function setUserBlockState(oid: string, uid: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/org/${oid}/user/${uid}/block/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function setUserLockState(oid: string, uid: string, state: boolean): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/org/${oid}/user/${uid}/lock/${state}`;
+
+    // Request
+    const response: any = await ws_client().put(url, null, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
 const roles: any = {
   get: getUserRoles,
   set: setUserRoles
@@ -131,5 +195,9 @@ const roles: any = {
 export default {
   list: getUsers,
   get: getUser,
+  block: (oid: string, uid: string) => setUserBlockState(oid, uid, true),
+  unblock: (oid: string, uid: string) => setUserBlockState(oid, uid, false),
+  lock: (oid: string, uid: string) => setUserLockState(oid, uid, true),
+  unlock: (oid: string, uid: string) => setUserLockState(oid, uid, false),
   roles
 }
