@@ -179,10 +179,7 @@
           apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
           roles
         ),
-        fixed:
-          apiRoles.FUNCTION_READ_LIST |
-          apiRoles.FUNCTION_CREATE |
-          apiRoles.FUNCTION_DELETE,
+        fixed: apiRoles.FUNCTION_CREATE,
       },
       {
         id: "templates",
@@ -241,10 +238,7 @@
           apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_ORG,
           roles
         ),
-        fixed:
-          apiRoles.FUNCTION_READ_LIST |
-          apiRoles.FUNCTION_CREATE |
-          apiRoles.FUNCTION_DELETE,
+        fixed: apiRoles.FUNCTION_CREATE,
       },
       {
         id: "store",

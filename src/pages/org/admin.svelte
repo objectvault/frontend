@@ -8,6 +8,7 @@
    * You should have received a copy of the GNU Affero General Public License
    * along with this program.  If not, see <https://www.gnu.org/licenses/>.
    */
+  // cSpell:ignore storename
 
   // SVELTE API //
   import { onDestroy } from "svelte";
@@ -222,7 +223,6 @@
 
     try {
       let o: any = await apiSystem.orgs.create(org);
-      // await reloadAllOrgs();
 
       // Close Modal
       orgOpen = false;
@@ -704,6 +704,52 @@
             tooltip: "Block User in Organization",
           },
         ];
+      case "delete-org-user":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel Deletion",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "danger",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Remove Organization
+                const action: TAction = oModalMessage.params.action;
+                const e: OrganizationUser = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.username()}]`);
+                await apiOrg.users.delete(e.organization(), e.user());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`User [${e.username()}] Removed`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Remove User from Organization",
+          },
+        ];
       case "delete-store":
         return [
           {
@@ -878,6 +924,7 @@
           console.info(`Clicked [${a.id}] on [${entry.username()}]`);
           roleModifyEntry = entry;
           toggleRolesModifyModal();
+          // TODO Set Read Only when e.isStateSet(ObjectState.STATE_DELETE)
         },
         display: (a: TAction, e: OrganizationUser) =>
           organizationUser
@@ -918,40 +965,41 @@
           organizationUser
             .roles()
             .hasRole(
-              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.user()) /* NOT SELF */ &&
-          (e.state() & ObjectState.STATE_READONLY) != 0,
+          e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: OrganizationUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unlock",
         tooltip: "Unlock User",
-        disabled: (a: TAction, e: OrganizationUser) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "org.user.lock",
         icon: "book-fill",
         color: "success",
-        handler: (a: TAction, e: OrganizationUser) => {
+        handler: (a: TAction, e: OrganizationUser) =>
           displayMessageModal({
-            title: "Block Changes",
-            message: `Block User Modifications [${e.username()}]?`,
+            title: `Block Changes [${e.username()}]`,
+            message: `Block User Modifications in Current Organization?`,
             type: "lock-org-user",
             params: {
               action: a,
               entry: e,
             },
-          });
-        },
+          }),
         display: (a: TAction, e: OrganizationUser) =>
           organizationUser
             .roles()
             .hasRole(
-              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.user()) /* NOT SELF */ &&
-          (e.state() & ObjectState.STATE_READONLY) == 0,
+          !e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: OrganizationUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block User",
       },
@@ -984,40 +1032,41 @@
           organizationUser
             .roles()
             .hasRole(
-              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.user()) /* NOT SELF */ &&
-          (e.state() & ObjectState.STATE_BLOCKED) != 0,
+          e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: OrganizationUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unblock",
         tooltip: "Unblock User",
-        disabled: (a: TAction, e: OrganizationUser) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "org.user.block",
         icon: "check-circle",
         color: "success",
-        handler: (a: TAction, e: OrganizationUser) => {
+        handler: (a: TAction, e: OrganizationUser) =>
           displayMessageModal({
-            title: "Block Access",
-            message: `Block User Access [${e.username()}]?`,
+            title: `Block Access [${e.username()}]`,
+            message: `Block User Access to Current Organization?`,
             type: "block-org-user",
             params: {
               action: a,
               entry: e,
             },
-          });
-        },
+          }),
         display: (a: TAction, e: OrganizationUser) =>
           organizationUser
             .roles()
             .hasRole(
-              apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
+              apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.user()) /* NOT SELF */ &&
-          (e.state() & ObjectState.STATE_BLOCKED) == 0,
+          !e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: OrganizationUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block User in Organization",
       },
@@ -1026,7 +1075,15 @@
         icon: "trash",
         color: "danger",
         handler: (a: TAction, e: OrganizationUser) =>
-          console.info(`Clicked [${a.id}] on [${e.username()}]`),
+          displayMessageModal({
+            title: `Remove User [${e.username()}]`,
+            message: `Remove user from Organization?`,
+            type: "delete-org-user",
+            params: {
+              action: a,
+              entry: e,
+            },
+          }),
         display: (a: TAction, e: OrganizationUser) =>
           organizationUser
             .roles()
@@ -1034,6 +1091,8 @@
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_DELETE
             ) && !organizationUser.isUser(e.user()) /* NOT SELF */,
+        disabled: (a: TAction, e: OrganizationUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Delete",
         tooltip: "Remove User from Organization",
       },
@@ -1122,8 +1181,8 @@
         id: "invite.delete",
         icon: "dash-circle",
         color: "danger",
-        handler: async (a: TAction, i: Invitation) => {
-          oModalMessage = {
+        handler: async (a: TAction, i: Invitation) =>
+          displayMessageModal({
             title: "Delete Invitation",
             message: `Delete Organization Invitation for [${i.invitee()}]?`,
             type: "remove-invite",
@@ -1131,8 +1190,7 @@
               action: a,
               entry: i,
             },
-          };
-        },
+          }),
         display: (a: TAction, i: Invitation) =>
           organizationUser
             .roles()
@@ -1380,17 +1438,17 @@
             .hasRole(
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
               apiRoles.FUNCTION_UPDATE
-            ) && (e.state() & ObjectState.STATE_READONLY) != 0,
+            ) && e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: OrganizationStore) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unlock",
         tooltip: "Unlock Modifications to Store",
-        disabled: (a: TAction, e: OrganizationStore) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "store.lock",
         icon: "book-fill",
         color: "success",
-        handler: (a: TAction, e: OrganizationStore) => {
+        handler: (a: TAction, e: OrganizationStore) =>
           displayMessageModal({
             title: "Block Changes",
             message: `Block Modifications to Store [${e.storename()}]?`,
@@ -1399,15 +1457,16 @@
               action: a,
               entry: e,
             },
-          });
-        },
+          }),
         display: (a: TAction, e: OrganizationStore) =>
           organizationUser
             .roles()
             .hasRole(
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
               apiRoles.FUNCTION_UPDATE
-            ) && (e.state() & ObjectState.STATE_READONLY) == 0,
+            ) && !e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: OrganizationStore) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block Modifications to Store",
       },
@@ -1442,17 +1501,17 @@
             .hasRole(
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
               apiRoles.FUNCTION_UPDATE
-            ) && (e.state() & ObjectState.STATE_BLOCKED) != 0,
+            ) && e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: OrganizationStore) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unblock",
         tooltip: "Unblock Access to Store",
-        disabled: (a: TAction, e: OrganizationStore) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "store.block",
         icon: "check-circle",
         color: "success",
-        handler: (a: TAction, e: OrganizationStore) => {
+        handler: (a: TAction, e: OrganizationStore) =>
           displayMessageModal({
             title: "Block Access",
             message: `Block Access to Store [${e.storename()}]?`,
@@ -1461,15 +1520,16 @@
               action: a,
               entry: e,
             },
-          });
-        },
+          }),
         display: (a: TAction, e: OrganizationStore) =>
           organizationUser
             .roles()
             .hasRole(
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
               apiRoles.FUNCTION_UPDATE
-            ) && (e.state() & ObjectState.STATE_BLOCKED) == 0,
+            ) && !e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: OrganizationStore) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block Store",
       },
@@ -1477,7 +1537,7 @@
         id: "store.delete",
         icon: "trash",
         color: "danger",
-        handler: (a: TAction, e: OrganizationStore) => {
+        handler: (a: TAction, e: OrganizationStore) =>
           displayMessageModal({
             title: "Delete Store",
             message: `Delete store [${e.storename()}] from Organization?`,
@@ -1486,8 +1546,7 @@
               action: a,
               entry: e,
             },
-          });
-        },
+          }),
         display: () =>
           organizationUser
             .roles()
@@ -1495,6 +1554,8 @@
               apiRoles.CATEGORY_ORG | apiRoles.SUBCATEGORY_STORE,
               apiRoles.FUNCTION_DELETE
             ),
+        disabled: (a: TAction, e: OrganizationStore) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Delete",
         tooltip: "Delete Store",
       },
@@ -1605,11 +1666,11 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !e.isSystem() &&
-          (e.state() & ObjectState.STATE_READONLY) != 0,
+          e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: Organization) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unlock",
         tooltip: "Unlock Modifications to Organization",
-        disabled: (a: TAction, e: Organization) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "org.lock",
@@ -1634,7 +1695,9 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !e.isSystem() &&
-          (e.state() & ObjectState.STATE_READONLY) == 0,
+          !e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: Organization) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block Modifications to Organization",
       },
@@ -1671,11 +1734,11 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !e.isSystem() &&
-          (e.state() & ObjectState.STATE_BLOCKED) != 0,
+          e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: Organization) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unblock",
         tooltip: "Unblock Access to Organization",
-        disabled: (a: TAction, e: Organization) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "org.block",
@@ -1700,7 +1763,9 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !e.isSystem() &&
-          (e.state() & ObjectState.STATE_BLOCKED) == 0,
+          !e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: Organization) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block Organization",
       },
@@ -1727,7 +1792,7 @@
               apiRoles.FUNCTION_DELETE
             ) && !e.isSystem(),
         disabled: (a: TAction, e: Organization) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Delete",
         tooltip: "Delete Organization",
       },
@@ -1818,11 +1883,11 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.id()) &&
-          (e.state() & ObjectState.STATE_READONLY) != 0,
+          e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: User) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unlock",
         tooltip: "Unlock User",
-        disabled: (a: TAction, e: User) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "user.lock",
@@ -1847,7 +1912,9 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.id()) &&
-          (e.state() & ObjectState.STATE_READONLY) == 0,
+          !e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: User) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block User",
       },
@@ -1884,11 +1951,11 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.id()) &&
-          (e.state() & ObjectState.STATE_BLOCKED) != 0,
+          e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: User) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Unblock",
         tooltip: "Unblock User",
-        disabled: (a: TAction, e: User) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
       },
       {
         id: "user.block",
@@ -1913,7 +1980,9 @@
               apiRoles.FUNCTION_UPDATE
             ) &&
           !organizationUser.isUser(e.id()) &&
-          (e.state() & ObjectState.STATE_BLOCKED) == 0,
+          !e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: User) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
         tooltip: "Block User",
       },
@@ -1939,9 +2008,8 @@
               apiRoles.CATEGORY_SYSTEM | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_DELETE
             ) && !organizationUser.isUser(e.id()),
-        disabled: (a: TAction, e: Organization) =>
-          (e.state() & ObjectState.STATE_DELETE) != 0,
-
+        disabled: (a: TAction, e: User) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Delete",
         tooltip: "Delete User",
       },
