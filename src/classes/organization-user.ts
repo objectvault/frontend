@@ -55,6 +55,10 @@ export class OrganizationUser {
     return e;
   }
 
+  public isStateSet(flags: number): boolean {
+    return ObjectState.hasState(this._state, flags)
+  }
+
   public isAdmin(): boolean {
     return this.isValid() && ObjectState.hasState(this._state, ObjectState.STATE_SYSTEM);
   }

@@ -187,6 +187,38 @@ async function setUserLockState(oid: string, uid: string, state: boolean): Promi
   }
 }
 
+async function deleteUser(oid: string, uid: string): Promise<any> {
+  try {
+    let options: any = {
+      withCredentials: true,
+    };
+
+    // Request URL
+    let url: string = `/org/${oid}/user/${uid}`;
+
+    // Request
+    const response: any = await ws_client().delete(url, options);
+    console.log(response);
+
+    if (response.status != 200) {
+      throw new Error("Not a Valid Response");
+    }
+
+    if (!response.hasOwnProperty("data")) {
+      throw new Error("Not a Valid API Response");
+    }
+
+    const code: number = _.get(response, "data.code", null);
+    if (code !== 1000) {
+      throw new Error(`Unexpected Response Code [${code}]`);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
 const roles: any = {
   get: getUserRoles,
   set: setUserRoles
@@ -195,6 +227,7 @@ const roles: any = {
 export default {
   list: getUsers,
   get: getUser,
+  delete: deleteUser,
   block: (oid: string, uid: string) => setUserBlockState(oid, uid, true),
   unblock: (oid: string, uid: string) => setUserBlockState(oid, uid, false),
   lock: (oid: string, uid: string) => setUserLockState(oid, uid, true),

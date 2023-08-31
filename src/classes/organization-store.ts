@@ -45,6 +45,10 @@ export class OrganizationStore {
     return e;
   }
 
+  public isStateSet(flags: number): boolean {
+    return ObjectState.hasState(this._state, flags)
+  }
+
   public reset(): OrganizationStore {
     this._organization = null;
     this._store = null;
