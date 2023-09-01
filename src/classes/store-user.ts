@@ -14,6 +14,7 @@ import du from "../dev-utils";
 
 // Import Common State Management Function
 import { Roles } from './roles';
+import ObjectState from "../api/states";
 
 export class StoreUser {
   private _store: string = null;
@@ -56,6 +57,10 @@ export class StoreUser {
       e = e && o._state === this._state;
     }
     return e;
+  }
+
+  public isStateSet(flags: number): boolean {
+    return ObjectState.hasState(this._state, flags)
   }
 
   public reset(): StoreUser {

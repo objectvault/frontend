@@ -25,6 +25,7 @@
   import apiSession from "../../api/session";
   import apiStore from "../../api/store";
   import apiRoles from "../../api/roles";
+  import ObjectState from "../../api/states";
 
   // Developer Libraries //
   import EventEmitter from "../../api/event-emitter";
@@ -256,6 +257,99 @@
             tooltip: "Remove User",
           },
         ];
+      case "lock-user":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "warning",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block User from System
+                const action: TAction = oModalMessage.params.action;
+                const e: StoreUser = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.username()}]`);
+                await apiStore.users.lock(e.store(), e.user());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`User [${e.username()}] Locked`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Lock User",
+          },
+        ];
+      case "block-user":
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "warning",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+          {
+            id: "__default",
+            label: "YES",
+            color: "warning",
+            classes: {
+              container: "col-4",
+            },
+            handler: async (a: TAction) => {
+              try {
+                // Block User from System
+                const action: TAction = oModalMessage.params.action;
+                const e: StoreUser = oModalMessage.params.entry;
+                console.info(`Clicked [${a.id}] on [${e.username()}]`);
+                await apiStore.users.block(e.store(), e.user());
+
+                // List Refresh?
+                const refresh: any = _.get(action, "__reloadList", null);
+                if (refresh && _.isFunction(refresh)) {
+                  await refresh();
+                }
+
+                console.log(`User [${e.username()}] Blocked`);
+
+                // Hide Modal
+                oModalMessage = null;
+              } catch (e) {
+                console.error(e);
+                arModalMessages = [e.toString()];
+              }
+            },
+            tooltip: "Block User",
+          },
+        ];
+
       case "remove-invite":
         return [
           {
@@ -304,6 +398,20 @@
             tooltip: "Remove Invitation",
           },
         ];
+      default:
+        return [
+          {
+            id: "__close",
+            label: "No",
+            color: "success",
+            display: () => false,
+            handler: (a: TAction) => {
+              console.info(`Clicked [${a.id}]`);
+              oModalMessage = null;
+            },
+            tooltip: "Cancel",
+          },
+        ];
     }
   }
 
@@ -336,11 +444,145 @@
             ) && e.roles() != null,
       },
       {
+        id: "user.unlock",
+        icon: "book",
+        color: "warning",
+        handler: async (a: TAction, e: StoreUser) => {
+          try {
+            // Unlock User in Organization
+            console.info(`Clicked [${a.id}] on [${e.username()}]`);
+            await apiStore.users.unlock(e.store(), e.user());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`User [${e.username()}] unlocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: StoreUser) =>
+          storeUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !storeUser.isUser(e.user()) /* NOT SELF */ &&
+          e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: StoreUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
+        label: "Unlock",
+        tooltip: "Unlock User",
+      },
+      {
+        id: "user.lock",
+        icon: "book-fill",
+        color: "success",
+        handler: (a: TAction, e: StoreUser) =>
+          displayMessageModal({
+            title: `Block Changes [${e.username()}]`,
+            message: `Block User Modifications in Current Organization?`,
+            type: "lock-user",
+            params: {
+              action: a,
+              entry: e,
+            },
+          }),
+        display: (a: TAction, e: StoreUser) =>
+          storeUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !storeUser.isUser(e.user()) /* NOT SELF */ &&
+          !e.isStateSet(ObjectState.STATE_READONLY),
+        disabled: (a: TAction, e: StoreUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
+        label: "Block",
+        tooltip: "Block User",
+      },
+      {
+        id: "user.unblock",
+        icon: "check-circle",
+        color: "warning",
+        handler: async (a: TAction, e: StoreUser) => {
+          try {
+            // Unblock User fin Organization
+            console.info(`Clicked [${a.id}] on [${e.username()}]`);
+            await apiStore.users.unblock(e.store(), e.user());
+
+            // List Refresh?
+            const refresh: any = _.get(a, "__reloadList", null);
+            if (refresh && _.isFunction(refresh)) {
+              await refresh();
+            }
+
+            console.log(`User [${e.username()}] Unblocked`);
+
+            // Hide Modal
+            oModalMessage = null;
+          } catch (e) {
+            console.error(e);
+            arModalMessages = [e.toString()];
+          }
+        },
+        display: (a: TAction, e: StoreUser) =>
+          storeUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !storeUser.isUser(e.user()) /* NOT SELF */ &&
+          e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: StoreUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
+        label: "Unblock",
+        tooltip: "Unblock User",
+      },
+      {
+        id: "user.block",
+        icon: "check-circle",
+        color: "success",
+        handler: (a: TAction, e: StoreUser) =>
+          displayMessageModal({
+            title: `Block Access [${e.username()}]`,
+            message: `Block User Access to Current Store?`,
+            type: "block-user",
+            params: {
+              action: a,
+              entry: e,
+            },
+          }),
+        display: (a: TAction, e: StoreUser) =>
+          storeUser
+            .roles()
+            .hasRole(
+              apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
+              apiRoles.FUNCTION_UPDATE
+            ) &&
+          !storeUser.isUser(e.user()) /* NOT SELF */ &&
+          !e.isStateSet(ObjectState.STATE_BLOCKED),
+        disabled: (a: TAction, e: StoreUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
+        label: "Block",
+        tooltip: "Block User in Organization",
+      },
+      {
         id: "user.delete",
         icon: "trash",
         color: "danger",
-        handler: async (a: TAction, e: StoreUser) => {
-          oModalMessage = {
+        handler: async (a: TAction, e: StoreUser) =>
+          displayMessageModal({
             title: "Remove User",
             message: `Remove user [${e.username()}] from Store?`,
             type: "remove-user",
@@ -348,8 +590,7 @@
               action: a,
               entry: e,
             },
-          };
-        },
+          }),
         display: (a: TAction, e: StoreUser) =>
           storeUser
             .roles()
@@ -357,6 +598,8 @@
               apiRoles.CATEGORY_STORE | apiRoles.SUBCATEGORY_USER,
               apiRoles.FUNCTION_DELETE
             ) && !storeUser.isUser(e.user()),
+        disabled: (a: TAction, e: StoreUser) =>
+          e.isStateSet(ObjectState.STATE_DELETE),
         label: "Delete",
         tooltip: "Remove User from Store",
       },
@@ -657,6 +900,14 @@
       notify(e.toString());
       return null;
     }
+  }
+
+  function displayMessageModal(options: any) {
+    // Clear any Existing Messages
+    arModalMessages = [];
+
+    // Display Modal with Options
+    oModalMessage = options;
   }
 
   // Page Initialization //
