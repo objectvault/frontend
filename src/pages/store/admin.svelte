@@ -489,7 +489,7 @@
         handler: (a: TAction, e: StoreUser) =>
           displayMessageModal({
             title: `Block Changes [${e.username()}]`,
-            message: `Block User Modifications in Current Organization?`,
+            message: `Block User Modifications in Current Store?`,
             type: "lock-user",
             params: {
               action: a,
@@ -575,7 +575,7 @@
         disabled: (a: TAction, e: StoreUser) =>
           e.isStateSet(ObjectState.STATE_DELETE),
         label: "Block",
-        tooltip: "Block User in Organization",
+        tooltip: "Block User from Store",
       },
       {
         id: "user.delete",
